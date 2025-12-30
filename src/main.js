@@ -31,6 +31,11 @@ let lockerHinge;
 const PLAYER_SPEED = 0.01;
 const ATTACK_DISTANCE = 1.0;
 
+//padlock
+let padlockGroup;
+let isPadlockFalling = false;
+let padlockVelocityY = 0;
+
 // ================= UI KOORDINAT =================
 const infoDiv = document.createElement('div');
 infoDiv.style.position = 'absolute';
@@ -59,7 +64,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.4; 
+renderer.toneMappingExposure = 0.15; 
 document.body.appendChild(renderer.domElement);
 
 const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -71,6 +76,165 @@ const sunLight = new THREE.DirectionalLight(0xffffff, 0.05);
 sunLight.position.set(5, 10, 7);
 sunLight.castShadow = true;
 scene.add(sunLight);
+
+// =========================================================
+// LIGHTING SETUP (LAMPU + BLOCKER)
+// =========================================================
+
+// --- DEFINISI MATERIAL BLOCKER (Dipakai Bersama) ---
+// Kita pakai satu geometri & material untuk semua blocker (hemat memori)
+const blockerGeometry = new THREE.BoxGeometry(4, 0.1, 4); 
+const blockerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+blockerMaterial.colorWrite = false; // Invisible
+blockerMaterial.depthWrite = false; 
+
+// ---------------------------------------------------------
+// SET 1: Kiri (-1.8, -1.6)
+// ---------------------------------------------------------
+const bulbLight1 = new THREE.PointLight(0xFFFFFF, 10, 5); 
+bulbLight1.position.set(-1.8, 0.4, -1.6); 
+bulbLight1.castShadow = true; 
+bulbLight1.shadow.mapSize.set(1024, 1024);
+bulbLight1.shadow.camera.near = 0.1;
+bulbLight1.shadow.bias = -0.0005;
+scene.add(bulbLight1);
+
+const blocker1 = new THREE.Mesh(blockerGeometry, blockerMaterial);
+blocker1.position.set(-1.8, 0.6, -1.6); // Posisi di atas lampu
+blocker1.castShadow = true;
+blocker1.receiveShadow = false;
+scene.add(blocker1);
+
+// ---------------------------------------------------------
+// SET 2: Kanan (1.8, -1.6)
+// ---------------------------------------------------------
+const bulbLight2 = new THREE.PointLight(0xFFFFFF, 10, 5); 
+bulbLight2.position.set(1.8, 0.4, -1.6); 
+bulbLight2.castShadow = true; 
+bulbLight2.shadow.mapSize.set(1024, 1024);
+bulbLight2.shadow.camera.near = 0.1;
+bulbLight2.shadow.bias = -0.0005;
+scene.add(bulbLight2);
+
+const blocker2 = new THREE.Mesh(blockerGeometry, blockerMaterial);
+blocker2.position.set(1.8, 0.6, -1.6);
+blocker2.castShadow = true;
+blocker2.receiveShadow = false;
+scene.add(blocker2);
+
+// ---------------------------------------------------------
+// SET 3: Tambahan (2.6, 1.05)
+// ---------------------------------------------------------
+const bulbLight3 = new THREE.PointLight(0xFFFFFF, 5, 5); 
+bulbLight3.position.set(2.6, 0.4, 1.05); 
+bulbLight3.castShadow = true; 
+bulbLight3.shadow.mapSize.set(1024, 1024); // Resolusi tinggi biar tidak bocor
+bulbLight3.shadow.camera.near = 0.1;
+bulbLight3.shadow.bias = -0.0005;
+scene.add(bulbLight3);
+
+const blocker3 = new THREE.Mesh(blockerGeometry, blockerMaterial);
+blocker3.position.set(2.6, 0.6, 1.05); // Y=0.6 (Di atas lampu)
+blocker3.castShadow = true;
+blocker3.receiveShadow = false;
+scene.add(blocker3);
+
+// ---------------------------------------------------------
+// SET 4: Kiri Depan (-2.6, 1.2)
+// ---------------------------------------------------------
+const bulbLight4 = new THREE.PointLight(0xFFFFFF, 5, 5); 
+bulbLight4.position.set(-2.6, 0.4, 1.2); 
+bulbLight4.castShadow = true; 
+bulbLight4.shadow.mapSize.set(1024, 1024); 
+bulbLight4.shadow.camera.near = 0.1;
+bulbLight4.shadow.bias = -0.0005;
+scene.add(bulbLight4);
+
+const blocker4 = new THREE.Mesh(blockerGeometry, blockerMaterial);
+blocker4.position.set(-2.6, 0.6, 1.2); 
+blocker4.castShadow = true;
+blocker4.receiveShadow = false;
+scene.add(blocker4);
+
+// ---------------------------------------------------------
+// SET 5: Tengah Atas (-0.15, 1.8, 1.4)
+// ---------------------------------------------------------
+// Tanpa blocker sesuai permintaan
+const bulbLight5 = new THREE.PointLight(0xFFFFFF, 15, 5); 
+bulbLight5.position.set(-0.15, 1.8, 1.4); 
+bulbLight5.castShadow = true; 
+bulbLight5.shadow.mapSize.set(1024, 1024); 
+bulbLight5.shadow.camera.near = 0.1;
+bulbLight5.shadow.bias = -0.0005;
+scene.add(bulbLight5);
+
+// ---------------------------------------------------------
+// SET 6: Tengah Atas (-2.8, 1.8, 1.3)
+// ---------------------------------------------------------
+// Tanpa blocker sesuai permintaan
+const bulbLight6 = new THREE.PointLight(0xFFFFFF, 5, 5); 
+bulbLight6.position.set(-2.6, 1.8, 1.3); 
+bulbLight6.castShadow = true; 
+bulbLight6.shadow.mapSize.set(1024, 1024); 
+bulbLight6.shadow.camera.near = 0.1;
+bulbLight6.shadow.bias = -0.0005;
+scene.add(bulbLight6);
+
+// ---------------------------------------------------------
+// SET 7: Tengah Atas (-2.1, 1.8, -1.6)
+// ---------------------------------------------------------
+// Tanpa blocker sesuai permintaan
+const bulbLight7 = new THREE.PointLight(0xFFFFFF, 7.5, 5); 
+bulbLight7.position.set(-2.1, 1.8, -1.6); 
+bulbLight7.castShadow = true; 
+bulbLight7.shadow.mapSize.set(1024, 1024); 
+bulbLight7.shadow.camera.near = 0.1;
+bulbLight7.shadow.bias = -0.0005;
+scene.add(bulbLight7);
+
+// ---------------------------------------------------------
+// SET 8: Tengah Atas (1.5, 1.8, -1.75)
+// ---------------------------------------------------------
+// Tanpa blocker sesuai permintaan
+const bulbLight8 = new THREE.PointLight(0xFFFFFF, 7.5, 5); 
+bulbLight8.position.set(1.5, 1.8, -1.75); 
+bulbLight8.castShadow = true; 
+bulbLight8.shadow.mapSize.set(1024, 1024); 
+bulbLight8.shadow.camera.near = 0.1;
+bulbLight8.shadow.bias = -0.0005;
+scene.add(bulbLight8);
+
+// ---------------------------------------------------------
+// SET 9: Tengah Atas (3.5, 1.8, -1.5)
+// ---------------------------------------------------------
+// Tanpa blocker sesuai permintaan
+const bulbLight9 = new THREE.PointLight(0xFFFFFF, 2.5, 5); 
+bulbLight9.position.set(3.5, 1.8, -1.5); 
+bulbLight9.castShadow = true; 
+bulbLight9.shadow.mapSize.set(1024, 1024); 
+bulbLight9.shadow.camera.near = 0.1;
+bulbLight9.shadow.bias = -0.0005;
+scene.add(bulbLight9);
+
+// ---------------------------------------------------------
+// SET 10: Tambahan (2.6, 1.8, 1.05)
+// ---------------------------------------------------------
+const bulbLight10 = new THREE.PointLight(0xFFFFFF, 5, 5); 
+bulbLight10.position.set(2.6, 1.8, 1.05); 
+bulbLight10.castShadow = true; 
+bulbLight10.shadow.mapSize.set(1024, 1024); // Resolusi tinggi biar tidak bocor
+bulbLight10.shadow.camera.near = 0.1;
+bulbLight10.shadow.bias = -0.0005;
+scene.add(bulbLight10);
+
+// (Opsional) Helper untuk melihat posisi semua lampu
+// const debugHelper1 = new THREE.CameraHelper(bulbLight1.shadow.camera);
+// const debugHelper2 = new THREE.CameraHelper(bulbLight2.shadow.camera);
+// const debugHelper3 = new THREE.CameraHelper(bulbLight3.shadow.camera);
+// scene.add(debugHelper1);
+// scene.add(debugHelper2);
+// scene.add(debugHelper3);
+
 
 // ================= CONTROLS =================
 const controls = new PointerLockControls(camera, renderer.domElement);
@@ -123,6 +287,20 @@ const loader = new GLTFLoader();
 loader.load('/granny_housegranny.glb', (gltf) => {
     const model = gltf.scene;
     model.scale.set(20, 20, 20);
+    
+    // --- TAMBAHAN PENTING ---
+    model.traverse((child) => {
+        if (child.isMesh) {
+            child.castShadow = true;    // Agar tembok menghalangi cahaya (bikin bayangan)
+            child.receiveShadow = true; // Agar tembok bisa kena bayangan
+            
+            // PENTING: Agar cahaya tidak tembus dinding tipis (backface culling)
+            child.material.side = THREE.DoubleSide; 
+            child.material.shadowSide = THREE.DoubleSide; 
+        }
+    });
+    // ------------------------
+
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center);
@@ -216,6 +394,17 @@ loader.load('/door_granny.glb', (gltf) => {
 loader.load('/granny_vase.glb', (gltf) => {
     const rawModel = gltf.scene;
 
+    // ===============================================
+    // UPDATE: AKTIFKAN SHADOW UNTUK VAS
+    // ===============================================
+    rawModel.traverse((child) => {
+        if (child.isMesh) {
+            child.castShadow = true;    // Vas akan membuat bayangan di lantai/meja
+            child.receiveShadow = true; // Vas bisa kena bayangan (self-shadowing)
+        }
+    });
+    // ===============================================
+
     const rawBox = new THREE.Box3().setFromObject(rawModel);
     const center = rawBox.getCenter(new THREE.Vector3());
     const bottomY = rawBox.min.y;
@@ -234,6 +423,7 @@ loader.load('/granny_vase.glb', (gltf) => {
     
     scene.add(vase);
 
+    // Helper sumbu (opsional, boleh dihapus kalau mengganggu visual)
     const axesHelper = new THREE.AxesHelper(0.5);
     vase.add(axesHelper);
 });
@@ -252,7 +442,7 @@ loader.load('/padlock__key.glb', (gltf) => {
 // padlock
 loader.load('/padlock__key.glb', (gltf) => {
     const root = gltf.scene;
-    const padlockGroup = new THREE.Group();
+    padlockGroup = new THREE.Group();
     const body = root.getObjectByName('Padlock_Padlock_0');
     const cylinder = root.getObjectByName('Cylinder_Padlock_0');
     const shackle = root.getObjectByName('Shakle_Padlock_0'); 
@@ -269,6 +459,26 @@ loader.load('/padlock__key.glb', (gltf) => {
     padlockGroup.scale.set(0.03, 0.03, 0.03);
     scene.add(padlockGroup);
 });
+function updateFallingInteractions() {
+    const FALL_THRESHOLD = 0.8;
+    const GROUND_Y = -0.77;
+
+    if (padlockGroup) {
+        const distToPadlock = camera.position.distanceTo(padlockGroup.position);
+
+        if (distToPadlock < FALL_THRESHOLD) isPadlockFalling = true;
+
+        if (isPadlockFalling) {
+            padlockVelocityY -= 0.001;
+            padlockGroup.position.y += padlockVelocityY;
+
+            if (padlockGroup.position.y <= GROUND_Y) {
+                padlockGroup.position.y = GROUND_Y;
+                padlockVelocityY = 0;
+            }
+        }
+    }
+}
 
 // plank atas
 loader.load('/plank.glb', (gltf) => {
@@ -397,7 +607,7 @@ function updateDoor() {
 function updateDrawers() {
     if (drawerLeft) {
         const distLeft = camera.position.distanceTo(drawerLeft.position);
-        const isLeftNear = distLeft < 0.6; // Jarak pemicu lebih kecil supaya lebih spesifik
+        const isLeftNear = distLeft < 0.4; // Jarak pemicu lebih kecil supaya lebih spesifik
         const targetZLeft = isLeftNear ? -0.85 : -0.65;
         
         drawerLeft.position.z = THREE.MathUtils.lerp(drawerLeft.position.z, targetZLeft, 0.05);
@@ -406,7 +616,7 @@ function updateDrawers() {
     // 2. Logika untuk Laci Kanan
     if (drawerRight) {
         const distRight = camera.position.distanceTo(drawerRight.position);
-        const isRightNear = distRight < 0.6;
+        const isRightNear = distRight < 0.4;
         const targetZRight = isRightNear ? -0.85 : -0.65;
         
         drawerRight.position.z = THREE.MathUtils.lerp(drawerRight.position.z, targetZRight, 0.05);
@@ -465,6 +675,7 @@ function animate() {
     updateDrawers();
     updateLocker();
     handleMovement();
+    updateFallingInteractions();
     renderer.render(scene, camera);
 }
 
