@@ -36,6 +36,11 @@ let padlockGroup;
 let isPadlockFalling = false;
 let padlockVelocityY = 0;
 
+// Variabel untuk Papan (Plank)
+let plankVelocity = 0;
+let isPlankDrop = false;
+let plankPivot;
+
 // ================= UI KOORDINAT =================
 const infoDiv = document.createElement('div');
 infoDiv.style.position = 'absolute';
@@ -110,7 +115,7 @@ scene.add(blocker1);
 // ---------------------------------------------------------
 const bulbLight2 = new THREE.PointLight(0xFFFFFF, 10, 5); 
 bulbLight2.position.set(1.8, 0.4, -1.6); 
-bulbLight2.castShadow = true; 
+bulbLight2.castShadow = false; 
 bulbLight2.shadow.mapSize.set(1024, 1024);
 bulbLight2.shadow.camera.near = 0.1;
 bulbLight2.shadow.bias = -0.0005;
@@ -127,7 +132,7 @@ scene.add(blocker2);
 // ---------------------------------------------------------
 const bulbLight3 = new THREE.PointLight(0xFFFFFF, 5, 5); 
 bulbLight3.position.set(2.6, 0.4, 1.05); 
-bulbLight3.castShadow = true; 
+bulbLight3.castShadow = false; 
 bulbLight3.shadow.mapSize.set(1024, 1024); // Resolusi tinggi biar tidak bocor
 bulbLight3.shadow.camera.near = 0.1;
 bulbLight3.shadow.bias = -0.0005;
@@ -174,7 +179,7 @@ scene.add(bulbLight5);
 // Tanpa blocker sesuai permintaan
 const bulbLight6 = new THREE.PointLight(0xFFFFFF, 5, 5); 
 bulbLight6.position.set(-2.6, 1.8, 1.3); 
-bulbLight6.castShadow = true; 
+bulbLight6.castShadow = false; 
 bulbLight6.shadow.mapSize.set(1024, 1024); 
 bulbLight6.shadow.camera.near = 0.1;
 bulbLight6.shadow.bias = -0.0005;
@@ -221,7 +226,7 @@ scene.add(bulbLight9);
 // ---------------------------------------------------------
 const bulbLight10 = new THREE.PointLight(0xFFFFFF, 5, 5); 
 bulbLight10.position.set(2.6, 1.8, 1.05); 
-bulbLight10.castShadow = true; 
+bulbLight10.castShadow = false; 
 bulbLight10.shadow.mapSize.set(1024, 1024); // Resolusi tinggi biar tidak bocor
 bulbLight10.shadow.camera.near = 0.1;
 bulbLight10.shadow.bias = -0.0005;
@@ -460,18 +465,13 @@ loader.load('/padlock__key.glb', (gltf) => {
     scene.add(padlockGroup);
 });
 function updateFallingInteractions() {
-    const FALL_THRESHOLD = 0.8;
     const GROUND_Y = -0.77;
 
     if (padlockGroup) {
-        const distToPadlock = camera.position.distanceTo(padlockGroup.position);
-
-        if (distToPadlock < FALL_THRESHOLD) isPadlockFalling = true;
 
         if (isPadlockFalling) {
             padlockVelocityY -= 0.001;
             padlockGroup.position.y += padlockVelocityY;
-
             if (padlockGroup.position.y <= GROUND_Y) {
                 padlockGroup.position.y = GROUND_Y;
                 padlockVelocityY = 0;
@@ -482,12 +482,47 @@ function updateFallingInteractions() {
 
 // plank atas
 loader.load('/plank.glb', (gltf) => {
-    const plank = gltf.scene;
-    plank.position.set(-0.05, 0.4, 2.62); 
-    plank.rotation.x = -Math.PI / 2; 
-    plank.scale.set(3.5, 3, 3); 
-    scene.add(plank);
+    const plankMesh = gltf.scene;
+
+    plankPivot = new THREE.Group();
+    // Posisi engsel di KANAN
+    plankPivot.position.set(0.34, 0, 2.62); 
+
+    const axesHelper = new THREE.AxesHelper(2);
+    plankPivot.add(axesHelper);
+
+    plankPivot.add(plankMesh);
+    // Mesh digeser ke KIRI dari engsel
+    plankMesh.position.set(-0.37, 0.4, 0); 
+
+    plankMesh.rotation.x = -Math.PI / 2; 
+    plankMesh.scale.set(3.5, 3, 3); 
+
+    scene.add(plankPivot);
 });
+
+function updatePlankPhysics() {
+    // Cek apakah pivot sudah ada dan trigger sudah aktif
+    if (!plankPivot || !isPlankDrop) return;
+
+    // TARGET: 90 Derajat Positif (Jatuh ke Kiri Bawah / Berlawanan jarum jam)
+    const targetRotation = Math.PI / 2; 
+
+    if (plankPivot.rotation.z < targetRotation) {
+        plankVelocity += 0.0015; 
+        plankPivot.rotation.z += plankVelocity; 
+
+        // Stop dan efek membal
+        if (plankPivot.rotation.z > targetRotation) {
+            plankPivot.rotation.z = targetRotation;
+            plankVelocity = -plankVelocity * 0.3; 
+            
+            if (Math.abs(plankVelocity) < 0.001) {
+                plankVelocity = 0;
+            }
+        }
+    }
+}
 
 // plank bawah
 loader.load('/plank.glb', (gltf) => {
@@ -500,7 +535,15 @@ loader.load('/plank.glb', (gltf) => {
 
 // ================= INPUT SYSTEM =================
 const keyState = {};
-document.addEventListener('keydown', (e) => keyState[e.code] = true);
+document.addEventListener('keydown', (e) => {
+    keyState[e.code] = true;
+
+    // TAMBAHAN: Tekan 'F' untuk menjatuhkan papan
+    if (e.code === 'KeyF') {
+        isPlankDrop = true;
+        isPadlockFalling = true;
+    }
+});
 document.addEventListener('keyup', (e) => keyState[e.code] = false);
 
 
@@ -676,6 +719,7 @@ function animate() {
     updateLocker();
     handleMovement();
     updateFallingInteractions();
+    updatePlankPhysics();
     renderer.render(scene, camera);
 }
 
