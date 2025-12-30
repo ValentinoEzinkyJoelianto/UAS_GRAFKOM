@@ -15,6 +15,17 @@ let vase;
 let vaseVelocityY = -0.0005; 
 const GRAVITY = 0; 
 let isTumbling = false; // <--- STATUS BARU: Apakah vas sedang terguling?
+let rollSpeed = 0;
+
+// 1. Variabel global untuk menyimpan referensi
+let doorHinge;
+let door;
+let isOpen = false;
+
+let drawerLeft, drawerRight;
+let isDrawerOpen = false;
+
+let lockerHinge;
 
 // Konfigurasi
 const PLAYER_SPEED = 0.01;
@@ -40,8 +51,8 @@ scene.background = new THREE.Color(0x000000);
 scene.fog = new THREE.Fog(0x000000, 1, 15); 
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(-2.5, 0.2, -1.75); 
-camera.lookAt(-1.5, -0.3, -1.75);
+camera.position.set(-1.47, -0.53, -1.34); 
+camera.lookAt(-1.46, -0.38, -1.70);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -74,7 +85,7 @@ function fadeToAction(name, duration = 0.2) {
 }
 
 // ================= CUSTOM OBJECTS =================
-const flatBoxGeometry = new THREE.BoxGeometry(0.75, 0.025, 0.75); 
+const flatBoxGeometry = new THREE.BoxGeometry(0.75, 0.025, 1.5); 
 
 // --- BALOK 1 (Invisible / Meja Bawah) ---
 const flatBoxMaterial = new THREE.MeshStandardMaterial({ 
@@ -97,7 +108,7 @@ const flatBoxMaterialVisible = new THREE.MeshStandardMaterial({
     visible: false, 
 });
 const flatBox2 = new THREE.Mesh(flatBoxGeometry, flatBoxMaterialVisible);
-flatBox2.position.set(-1.6, -0.7, -1.75); 
+flatBox2.position.set(-1.6, -0.73, -1.75); 
 scene.add(flatBox2);
 
 flatBox2.updateMatrixWorld(true);
@@ -143,50 +154,62 @@ loader.load('/granny_animated.glb', (gltf) => {
 
 // 3. Load Locker Door
 loader.load('/locker_door_separated.glb', (gltf) => {
-    const locker = gltf.scene;
-    locker.position.set(-0.86, 1.40, -2.42);
-    locker.rotation.y = Math.PI / 2;
-    locker.scale.set(50, 50, 93);
-    locker.traverse((child) => {
+    const lockerMesh = gltf.scene;
+    
+    lockerHinge = new THREE.Group();
+    lockerMesh.position.set(0.0002, 0, 0); 
+    
+    lockerHinge.add(lockerMesh);
+
+    lockerHinge.position.set(-0.58 , 1.40, -2.415);
+    lockerHinge.rotation.y = -Math.PI * 0.5;
+    lockerHinge.scale.set(50, 50, 95);
+    
+    lockerMesh.traverse((child) => {
         if (child.isMesh) child.material.color.set(0xAB7F47);
     });
-    scene.add(locker);
+    
+    scene.add(lockerHinge);
 });
 
 // drawer kiri
 loader.load('/drawer_of_blacksmith_table_-_a.glb', (gltf) => {
-    const drawer = gltf.scene;
-    drawer.position.set(1.9, 1.237, -0.65);
-    drawer.scale.set(0.14, 0.25, 0.15); 
-    drawer.rotation.y = Math.PI;
-    scene.add(drawer);
+    drawerLeft = gltf.scene; // Hapus 'const', gunakan variabel global
+    drawerLeft.position.set(1.9, 1.237, -0.65);
+    drawerLeft.scale.set(0.14, 0.25, 0.15); 
+    drawerLeft.rotation.y = Math.PI;
+    scene.add(drawerLeft);
 });
 
 // drawer kanan
 loader.load('/drawer_of_blacksmith_table_-_a.glb', (gltf) => {
-    const drawer = gltf.scene;
-    drawer.position.set(1.62, 1.237, -0.65);
-    drawer.scale.set(0.14, 0.25, 0.15); 
-    drawer.rotation.y = Math.PI;
-    scene.add(drawer);
+    drawerRight = gltf.scene; // Hapus 'const', gunakan variabel global
+    drawerRight.position.set(1.62, 1.237, -0.65);
+    drawerRight.scale.set(0.14, 0.25, 0.15);
+    drawerRight.rotation.y = Math.PI;
+    scene.add(drawerRight);
 });
 
 // pintu kiri
 loader.load('/door_granny.glb', (gltf) => {
     const door = gltf.scene;
-    door.position.set(-1.04, 0.6, -0.47);
-    door.rotation.y = Math.PI; 
+    door.position.set(-0.35, 0.6, -0.47);
+    door.rotation.y = -Math.PI * 0.5; 
     door.scale.set(0.046, 0.046, 0.04); 
     scene.add(door);
 });
 
 // pintu kanan
 loader.load('/door_granny.glb', (gltf) => {
-    const door = gltf.scene;
-    door.position.set(0.995, 0.6, -0.47);
-    door.rotation.y = Math.PI;
-    door.scale.set(-0.046, 0.046, 0.04); 
-    scene.add(door);
+    const doorMesh = gltf.scene;
+    doorHinge = new THREE.Group();
+    doorMesh.position.set(0.5, 0, 0); 
+    doorHinge.add(doorMesh);
+    doorHinge.position.set(0.995, 0.6, -0.47);
+    doorHinge.rotation.y = Math.PI;
+    doorHinge.scale.set(-0.048, 0.046, 0.04); 
+    
+    scene.add(doorHinge);
 });
 
 // --- LOAD VAS BUNGA ---
@@ -308,7 +331,10 @@ function handleMovement() {
         if (inArea2 && vase.position.y <= SURFACE_2_Y) {
             vase.position.y = SURFACE_2_Y;
             vaseVelocityY = 0;
-            isTumbling = false; // Matikan mode terguling
+            if (isTumbling) {
+                rollSpeed = 0.0005; // Tenaga awal menggelinding di lantai
+                isTumbling = false; // Tetap false seperti permintaanmu
+            } // Matikan mode terguling
         }
         
         // B. Cek Pemicu Awal (Meja / Box 1)
@@ -325,14 +351,83 @@ function handleMovement() {
             vase.rotation.z -= 0.00585;   // Muter
         }
 
+        // D. ANIMASI TAMBAHAN: Menggelinding di Lantai (Setelah isTumbling False)
+        if (rollSpeed > 0) {
+            vase.position.z -= rollSpeed;      // Tetap maju di sumbu Z
+            vase.rotation.x -= rollSpeed * 13; // Tetap muter
+            rollSpeed *= 0.997;                // Mengurangi kecepatan perlahan (gesekan)
+
+            if (rollSpeed < 0.0001) rollSpeed = 0; // Berhenti total
+        }
+
         // Reset
         if (vase.position.y < -5) {
             vase.position.set(-2.03, 0.5, -1.75); 
             vase.rotation.set(0, 0, 0); 
             vaseVelocityY = 0;
-            isTumbling = false; // Reset status
+            isTumbling = false;
+            rollSpeed = 0; // Reset status
         }
     }
+}
+
+function updateDoor() {
+    if (!doorHinge) return;
+
+    const distance = camera.position.distanceTo(doorHinge.position);
+
+    // Jarak 1.5 - 2.0 biasanya pas untuk ukuran pintu
+    if (distance < 1.2) {
+        isOpen = true;
+    } else {
+        isOpen = false;
+    }
+
+    // Tentukan rotasi buka (misal: tambah 1.5 radian)
+    const targetRotation = isOpen ? -(Math.PI + 1.5) : -Math.PI;
+    
+    // Animasi halus pada engselnya
+    doorHinge.rotation.y = THREE.MathUtils.lerp(
+        doorHinge.rotation.y, 
+        targetRotation, 
+        0.05 // Kecepatan (makin kecil makin lambat/halus)
+    );
+}
+
+function updateDrawers() {
+    if (drawerLeft) {
+        const distLeft = camera.position.distanceTo(drawerLeft.position);
+        const isLeftNear = distLeft < 0.6; // Jarak pemicu lebih kecil supaya lebih spesifik
+        const targetZLeft = isLeftNear ? -0.85 : -0.65;
+        
+        drawerLeft.position.z = THREE.MathUtils.lerp(drawerLeft.position.z, targetZLeft, 0.05);
+    }
+
+    // 2. Logika untuk Laci Kanan
+    if (drawerRight) {
+        const distRight = camera.position.distanceTo(drawerRight.position);
+        const isRightNear = distRight < 0.6;
+        const targetZRight = isRightNear ? -0.85 : -0.65;
+        
+        drawerRight.position.z = THREE.MathUtils.lerp(drawerRight.position.z, targetZRight, 0.05);
+    }
+}
+
+function updateLocker() {
+    if (!lockerHinge) return;
+
+    const distance = camera.position.distanceTo(lockerHinge.position);
+    const isCloseEnough = distance < 1.0;
+    const isInFront = camera.position.z > lockerHinge.position.z - 0.15;
+    const isOpen = isCloseEnough && isInFront;
+
+    const targetRotation = isOpen ? 0 : -Math.PI * 0.5;
+
+    lockerHinge.rotation.y = THREE.MathUtils.lerp(
+        lockerHinge.rotation.y, 
+        targetRotation, 
+        0.05
+    );
 }
 
 // ================= MAIN LOOP =================
@@ -366,7 +461,9 @@ function animate() {
             }
         }
     }
-
+    updateDoor();
+    updateDrawers();
+    updateLocker();
     handleMovement();
     renderer.render(scene, camera);
 }
