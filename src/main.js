@@ -535,7 +535,7 @@ loader.load('/plank.glb', (gltf) => {
     plank.scale.set(3.5, 3, 3); 
     scene.add(plank);
 });
-
+// ================= KACA =================
 //Glass Door
 loader.load('/glass_door.glb', (gltf) => {
     const glassDoor = gltf.scene;
