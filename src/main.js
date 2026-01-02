@@ -9,6 +9,8 @@ let mixer, activeAction, grannyPivot;
 let actions = {};
 const clock = new THREE.Clock();
 let isAttacking = false;
+const dummyTarget = new THREE.Object3D(); 
+const targetPos = new THREE.Vector3();
 
 // --- GLOBAL VARIABLES UNTUK FISIKA VAS ---
 let vase; 
@@ -98,7 +100,7 @@ blockerMaterial.depthWrite = false;
 // ---------------------------------------------------------
 const bulbLight1 = new THREE.PointLight(0xFFFFFF, 10, 5); 
 bulbLight1.position.set(-1.8, 0.4, -1.6); 
-bulbLight1.castShadow = true; 
+bulbLight1.castShadow = false; 
 bulbLight1.shadow.mapSize.set(1024, 1024);
 bulbLight1.shadow.camera.near = 0.1;
 bulbLight1.shadow.bias = -0.0005;
@@ -106,7 +108,7 @@ scene.add(bulbLight1);
 
 const blocker1 = new THREE.Mesh(blockerGeometry, blockerMaterial);
 blocker1.position.set(-1.8, 0.6, -1.6); // Posisi di atas lampu
-blocker1.castShadow = true;
+blocker1.castShadow = false;
 blocker1.receiveShadow = false;
 scene.add(blocker1);
 
@@ -123,7 +125,7 @@ scene.add(bulbLight2);
 
 const blocker2 = new THREE.Mesh(blockerGeometry, blockerMaterial);
 blocker2.position.set(1.8, 0.6, -1.6);
-blocker2.castShadow = true;
+blocker2.castShadow = false;
 blocker2.receiveShadow = false;
 scene.add(blocker2);
 
@@ -140,7 +142,7 @@ scene.add(bulbLight3);
 
 const blocker3 = new THREE.Mesh(blockerGeometry, blockerMaterial);
 blocker3.position.set(2.6, 0.6, 1.05); // Y=0.6 (Di atas lampu)
-blocker3.castShadow = true;
+blocker3.castShadow = false;
 blocker3.receiveShadow = false;
 scene.add(blocker3);
 
@@ -149,7 +151,7 @@ scene.add(blocker3);
 // ---------------------------------------------------------
 const bulbLight4 = new THREE.PointLight(0xFFFFFF, 5, 5); 
 bulbLight4.position.set(-2.6, 0.4, 1.2); 
-bulbLight4.castShadow = true; 
+bulbLight4.castShadow = false; 
 bulbLight4.shadow.mapSize.set(1024, 1024); 
 bulbLight4.shadow.camera.near = 0.1;
 bulbLight4.shadow.bias = -0.0005;
@@ -157,7 +159,7 @@ scene.add(bulbLight4);
 
 const blocker4 = new THREE.Mesh(blockerGeometry, blockerMaterial);
 blocker4.position.set(-2.6, 0.6, 1.2); 
-blocker4.castShadow = true;
+blocker4.castShadow = false;
 blocker4.receiveShadow = false;
 scene.add(blocker4);
 
@@ -167,7 +169,7 @@ scene.add(blocker4);
 // Tanpa blocker sesuai permintaan
 const bulbLight5 = new THREE.PointLight(0xFFFFFF, 15, 5); 
 bulbLight5.position.set(-0.15, 1.8, 1.4); 
-bulbLight5.castShadow = true; 
+bulbLight5.castShadow = false; 
 bulbLight5.shadow.mapSize.set(1024, 1024); 
 bulbLight5.shadow.camera.near = 0.1;
 bulbLight5.shadow.bias = -0.0005;
@@ -191,7 +193,7 @@ scene.add(bulbLight6);
 // Tanpa blocker sesuai permintaan
 const bulbLight7 = new THREE.PointLight(0xFFFFFF, 7.5, 5); 
 bulbLight7.position.set(-2.1, 1.8, -1.6); 
-bulbLight7.castShadow = true; 
+bulbLight7.castShadow = false; 
 bulbLight7.shadow.mapSize.set(1024, 1024); 
 bulbLight7.shadow.camera.near = 0.1;
 bulbLight7.shadow.bias = -0.0005;
@@ -203,7 +205,7 @@ scene.add(bulbLight7);
 // Tanpa blocker sesuai permintaan
 const bulbLight8 = new THREE.PointLight(0xFFFFFF, 7.5, 5); 
 bulbLight8.position.set(1.5, 1.8, -1.75); 
-bulbLight8.castShadow = true; 
+bulbLight8.castShadow = false; 
 bulbLight8.shadow.mapSize.set(1024, 1024); 
 bulbLight8.shadow.camera.near = 0.1;
 bulbLight8.shadow.bias = -0.0005;
@@ -215,7 +217,7 @@ scene.add(bulbLight8);
 // Tanpa blocker sesuai permintaan
 const bulbLight9 = new THREE.PointLight(0xFFFFFF, 2.5, 5); 
 bulbLight9.position.set(3.5, 1.8, -1.5); 
-bulbLight9.castShadow = true; 
+bulbLight9.castShadow = false; 
 bulbLight9.shadow.mapSize.set(1024, 1024); 
 bulbLight9.shadow.camera.near = 0.1;
 bulbLight9.shadow.bias = -0.0005;
@@ -315,6 +317,7 @@ loader.load('/granny_housegranny.glb', (gltf) => {
 // 2. Load Granny
 loader.load('/granny_animated.glb', (gltf) => {
     const grannyMesh = gltf.scene;
+    console.groupEnd();
     grannyPivot = new THREE.Group();
     grannyPivot.position.set(-0.65, -1.93, 0); 
     grannyMesh.scale.set(0.7, 0.7, 0.7);
@@ -328,7 +331,7 @@ loader.load('/granny_animated.glb', (gltf) => {
         actions[name] = mixer.clipAction(clip);
     });
 
-    const idleKey = Object.keys(actions).find(n => n.includes('idle'));
+    const idleKey = Object.keys(actions).find(n => n.includes('idle_1'));
     if (idleKey) {
         activeAction = actions[idleKey];
         activeAction.play();
@@ -533,6 +536,34 @@ loader.load('/plank.glb', (gltf) => {
     scene.add(plank);
 });
 
+//Glass Door
+loader.load('/glass_door.glb', (gltf) => {
+    const glassDoor = gltf.scene;
+    glassDoor.position.set(0.46, 0.18, 0.84);
+    glassDoor.scale.set(0.0000007, 0.00047, 0.0475); 
+    glassDoor.traverse((child) => {
+        if (child.isMesh) {
+            // 1. Izinkan transparansi
+            child.material.transparent = true;
+
+            // 2. Atur tingkat keburaman (0.0 = hilang total, 1.0 = padat)
+            // Coba angka 0.3 atau 0.5 untuk efek kaca
+            child.material.opacity = 0.2; 
+
+            // 3. (Opsional) Agar kaca terlihat mengkilap/licin
+            child.material.roughness = 0.1; // Makin kecil makin licin
+            child.material.metalness = 0.1; // Sedikit pantulan
+
+            // 4. (Opsional) Agar terlihat dari kedua sisi (depan & belakang)
+            child.material.side = THREE.DoubleSide; 
+            
+            // 5. (Penting untuk kaca) Matikan depthWrite jika ada glitch visual tumpang tindih
+            // child.material.depthWrite = false; 
+        }
+    });
+    scene.add(glassDoor);
+});
+
 // ================= INPUT SYSTEM =================
 const keyState = {};
 document.addEventListener('keydown', (e) => {
@@ -686,7 +717,7 @@ function updateLocker() {
 // ================= MAIN LOOP =================
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta();
+    const delta = clock.getDelta(); 
 
     if (mixer) mixer.update(delta);
 
@@ -697,23 +728,35 @@ function animate() {
 
     if (grannyPivot) {
         const distance = grannyPivot.position.distanceTo(camera.position);
-        grannyPivot.lookAt(camera.position.x, grannyPivot.position.y, camera.position.z);
 
-        if (distance < ATTACK_DISTANCE) {
-            if (!isAttacking) {
-                isAttacking = true;
-                const hitKey = Object.keys(actions).find(n => n.includes('hit') && !n.includes('arrow'));
-                if (hitKey) {
-                    fadeToAction(hitKey, 0.1);
-                    setTimeout(() => { 
-                        isAttacking = false; 
-                        const idleKey = Object.keys(actions).find(n => n.includes('idle'));
-                        if (idleKey) fadeToAction(idleKey, 0.5);
-                    }, 1500); 
-                }
-            }
+        // ===============================================
+        // LOGIKA ROTASI SMOOTH (SLERP)
+        // ===============================================
+        
+        const timeElapsed = clock.getElapsedTime();
+
+        // 1. Tentukan target koordinat berdasarkan waktu
+        if (timeElapsed < 23) {
+            // SEBELUM 22 Detik: Target ke kiri (-1.50)
+            targetPos.set(-1.50, grannyPivot.position.y, 0);
+        } else {
+            // SETELAH 22 Detik: Target ke kanan (0.65, ..., 0.88)
+            targetPos.set(0.37, grannyPivot.position.y, 0.73);
         }
+
+        // 2. Gunakan dummy object untuk mengintip rotasi target
+        // Pindahkan dummy ke posisi Granny saat ini
+        dummyTarget.position.copy(grannyPivot.position);
+        // Suruh dummy melihat ke target
+        dummyTarget.lookAt(targetPos); 
+
+        // 3. Putar Granny secara perlahan mendekati rotasi si dummy
+        // Angka 0.05 adalah kecepatan putar (makin kecil makin lambat/halus)
+        grannyPivot.quaternion.slerp(dummyTarget.quaternion, 0.3);
+
+        // ===============================================
     }
+    
     updateDoor();
     updateDrawers();
     updateLocker();
