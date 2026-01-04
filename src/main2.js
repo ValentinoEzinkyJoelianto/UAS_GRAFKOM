@@ -754,6 +754,21 @@ function updateLocker() {
     );
 }
 
+function updateCameraCinematics(delta) {
+    const time = clock.getElapsedTime();
+
+    // CONTOH: Dari detik 1 sampai detik 5, kamera turun perlahan
+    if (time > 0 && time < 3.0) {
+        
+        // Kecepatan turun (unit per detik)
+        // Kalau mau pelan banget, pakai angka kecil misal 0.1
+        const speed = 0.02; 
+        
+        // Gerakkan Y ke bawah (minus)
+        camera.position.y -= speed * delta;
+    }
+}
+
 // ================= MAIN LOOP =================
 function animate() {
     requestAnimationFrame(animate);
@@ -781,6 +796,8 @@ function animate() {
         dummyTarget.lookAt(targetPos); 
         grannyPivot.quaternion.slerp(dummyTarget.quaternion, 0.3);
     }
+
+    updateCameraCinematics(delta);
     
     updateDoor();
     updateDrawers();
