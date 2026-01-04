@@ -29,6 +29,8 @@ let isDrawerOpen = false;
 
 let lockerHinge;
 
+let heldKey;
+
 // Konfigurasi
 const PLAYER_SPEED = 0.01;
 const ATTACK_DISTANCE = 1.0;
@@ -67,38 +69,47 @@ const cameraPositions = [
         target: new THREE.Vector3(-0.45, -3.46, -5.53)
     },
     {
+        //kamera 5
         pos: new THREE.Vector3(0.31, 1.25, -0.09),
         target: new THREE.Vector3(3.29, 0.77, -4.08)
     },
     {
+        //kamera 6
         pos: new THREE.Vector3(-2.07, -0.00, 0.20),
         target: new THREE.Vector3(-4.10, -0.17, 4.77)
     },
     {
+        //kamera 7
         pos: new THREE.Vector3(1.32, 1.19, -1.53),
         target: new THREE.Vector3(4.91, 0.83, -4.99)
     },
     {
+        //kamera 8
         pos: new THREE.Vector3(-1.25, 0.29, 1.66),
         target: new THREE.Vector3(1.11, 0.66, -2.73)
     },
     {
+        //kamera 9
         pos: new THREE.Vector3(-0.73, -0.04, 2.03),
         target: new THREE.Vector3(1.30, -0.50, 6.58)
     },
     {
+        //kamera 10
         pos: new THREE.Vector3(0.39, 1.26, -0.40),
         target: new THREE.Vector3(3.92, 1.13, -3.93)
     },
     {
+        //kamera 11
         pos: new THREE.Vector3(0.71, 0.70, -2.27),
         target: new THREE.Vector3(4.44, 0.97, 1.05)
     },
     {
+        //kamera 12
         pos: new THREE.Vector3(-0.66, 1.26, -1.46),
         target: new THREE.Vector3(-0.53, 1.00, -6.45)
     },
     {
+        //kamera 13
         pos: new THREE.Vector3(-0.46, -0.24, 2.08),
         target: new THREE.Vector3(-5.46, -0.26, 1.99)
     }
@@ -146,6 +157,8 @@ const sunLight = new THREE.DirectionalLight(0xffffff, 0.05);
 sunLight.position.set(5, 10, 7);
 sunLight.castShadow = true;
 scene.add(sunLight);
+
+scene.add(camera);
 
 // =========================================================
 // LIGHTING SETUP (LAMPU + BLOCKER)
@@ -447,6 +460,36 @@ loader.load('/granny_vase.glb', (gltf) => {
     vase.position.set(-1.66, 0, -1.75); 
     
     scene.add(vase);
+});
+
+// Load Kunci
+loader.load('/padlock__key.glb', (gltf) => {
+    const root = gltf.scene;
+    // Cari mesh kuncinya (sesuaikan nama kalau beda)
+    heldKey = root.getObjectByName('Key_Padlock_0'); 
+    
+    if (heldKey) {
+        // HAPUS/KOMENTAR BARIS LAMA:
+        // keyMesh.position.set(-0.81, -0.05, 2.55); 
+        // scene.add(keyMesh);
+
+        // GANTI DENGAN INI:
+        camera.add(heldKey); // Tempel ke kamera
+
+        // Atur posisi RELATIF terhadap kamera (bukan koordinat dunia)
+        // X: Kanan/Kiri, Y: Atas/Bawah, Z: Depan/Belakang (Minus itu depan)
+        heldKey.position.set(0.4, -0.25, -0.5); 
+        
+        // Atur rotasi biar kuncinya menghadap ke depan enak dilihat
+        heldKey.rotation.set(0, Math.PI, -Math.PI/2); // Sesuaikan angle-nya
+        
+        // Skala mungkin perlu disesuaikan karena jaraknya dekat sekali dengan mata
+        heldKey.scale.set(0.055, 0.055, 0.055); 
+        
+        // Pastikan materialnya tidak tembus tembok (opsional, render order)
+        heldKey.material.depthTest = false; // Trik biar kunci selalu di atas segalanya (opsional)
+        heldKey.renderOrder = 999; 
+    }
 });
 
 // kunci padlock
