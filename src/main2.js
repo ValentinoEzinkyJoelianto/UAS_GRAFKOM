@@ -722,23 +722,33 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => keyState[e.code] = false);
 
 
-function handleMovement() {
+// Terima parameter delta di sini
+function handleMovement(delta) {
+    // Buat faktor pengali agar kecepatan konsisten di semua layar
+    // Angka 60 adalah target FPS (basis perhitunganmu saat ini)
+    const timeScale = delta * 90; 
+
     if (controls.isLocked) {
-        if (keyState['KeyW']) controls.moveForward(PLAYER_SPEED);
-        if (keyState['KeyS']) controls.moveForward(-PLAYER_SPEED);
-        if (keyState['KeyA']) controls.moveRight(-PLAYER_SPEED);
-        if (keyState['KeyD']) controls.moveRight(PLAYER_SPEED);
-        if (keyState['Space']) camera.position.y += 0.01;
-        if (keyState['ShiftLeft']) camera.position.y -= 0.01;
+        // PointerLockControls biasanya sudah handle delta internal atau cukup responsif, 
+        // tapi jika manual, kalikan juga. Untuk code kamu yang pakai library, biarkan dulu.
+        if (keyState['KeyW']) controls.moveForward(PLAYER_SPEED * timeScale); // Opsional: kasih timeScale biar jalan player juga sama
+        if (keyState['KeyS']) controls.moveForward(-PLAYER_SPEED * timeScale);
+        if (keyState['KeyA']) controls.moveRight(-PLAYER_SPEED * timeScale);
+        if (keyState['KeyD']) controls.moveRight(PLAYER_SPEED * timeScale);
+        if (keyState['Space']) camera.position.y += 0.01 * timeScale;
+        if (keyState['ShiftLeft']) camera.position.y -= 0.01 * timeScale;
     }
 
     if (vase) {
-        // 1. Gravitasi
-        vaseVelocityY = -0.0005; 
-        vaseVelocityY -= GRAVITY; 
-        vase.position.y += vaseVelocityY;
+        // 1. Gravitasi & Jatuh
+        // Perhatikan: Kita kalikan perubahan posisi dengan timeScale
+        
+        vaseVelocityY = -0.0005; // Note: Ini membuat kecepatan konstan (bukan percepatan gravitasi asli), tapi gapapa kalau maunya begitu.
+        
+        // Terapkan timeScale ke pergerakan Y
+        vase.position.y += vaseVelocityY * timeScale; 
 
-        // 2. Cek Area
+        // 2. Cek Area (Logika BB tidak perlu diubah)
         const inArea1 = 
             vase.position.x >= flatBoxBB.min.x && 
             vase.position.x <= flatBoxBB.max.x &&
@@ -754,7 +764,7 @@ function handleMovement() {
         // --- LOGIKA UTAMA ---
         if (inArea2 && vase.position.y <= SURFACE_2_Y) {
             vase.position.y = SURFACE_2_Y;
-            vaseVelocityY = 0;
+            // vaseVelocityY = 0; // Baris ini tidak ngefek karena di atas kamu set ulang jadi -0.0005 tiap frame
             if (isTumbling) {
                 rollSpeed = 0.0005; 
                 isTumbling = false; 
@@ -765,14 +775,21 @@ function handleMovement() {
         }
 
         if (isTumbling) {
-            vase.position.x += 0.0005; 
-            vase.rotation.z -= 0.00585; 
+            // KALIKAN timeScale DI SINI JUGA
+            vase.position.x += 0.0005 * timeScale; 
+            vase.rotation.z -= 0.00585 * timeScale; 
         }
 
         if (rollSpeed > 0) {
-            vase.position.z -= rollSpeed; 
-            vase.rotation.x -= rollSpeed * 13; 
-            rollSpeed *= 0.997; 
+            // KALIKAN timeScale DI SINI JUGA
+            vase.position.z -= rollSpeed * timeScale; 
+            vase.rotation.x -= (rollSpeed * 13) * timeScale; 
+            
+            // Friksi/perlambatan juga butuh timeScale (sedikit trickier, tapi ini pendekatan simplenya)
+            // Kita pakai Math.pow untuk friksi yang framerate independent
+            // Awal: rollSpeed *= 0.997;
+            // Baru:
+            rollSpeed *= Math.pow(0.997, timeScale); 
 
             if (rollSpeed < 0.0001) rollSpeed = 0; 
         }
@@ -1124,7 +1141,7 @@ function animate() {
     updateDoor();
     updateDrawers();
     updateLocker();
-    handleMovement();
+    handleMovement(delta);
     updateFallingInteractions();
     updatePlankPhysics();
     renderer.render(scene, camera);
