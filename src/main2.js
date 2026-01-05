@@ -50,18 +50,18 @@ let plankPivot;
 const cameraPositions = [
     {
         pos: new THREE.Vector3(-0.39, -0.99, 0.15),
-        target: new THREE.Vector3(-4.47, -1.60, -2.68) // Menatap ke arah meja/vas
+        target: new THREE.Vector3(-4.47, -1.60, -2.68)
         
     },
     {
         // Kamera 2
-        pos: new THREE.Vector3(-1.56, -0.28, -1.24),
-        target: new THREE.Vector3(-1.82, 0.12, -6.22) // Menatap Vas dari dekat
+        pos: new THREE.Vector3(-1.56, -0.1, -1.24),
+        target: new THREE.Vector3(-1.82, 0.12, -6.22)
     },
     {
         // Kamera 3
-        pos: new THREE.Vector3(-1.46, -0.47, -1.43),
-        target: new THREE.Vector3(-1.02, -0.76, -6.41)
+        pos: new THREE.Vector3(-1.46, -0.11, -1.44),
+        target: new THREE.Vector3(-0.85, -2.83, -5.71)
     },
     {
         // Kamera 4
@@ -137,7 +137,7 @@ scene.fog = new THREE.Fog(0x000000, 1, 15);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 // Posisi Default Awal
-camera.position.set(-1.56, -0.28, -1.24);
+camera.position.set(-1.56, -0.1, -1.24);
 camera.lookAt(-2.08, 0.15, -6.19);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -493,6 +493,7 @@ loader.load('/padlock__key.glb', (gltf) => {
 });
 
 // kunci padlock
+/*
 loader.load('/padlock__key.glb', (gltf) => {
     const root = gltf.scene;
     const keyMesh = root.getObjectByName('Key_Padlock_0'); 
@@ -502,6 +503,7 @@ loader.load('/padlock__key.glb', (gltf) => {
         scene.add(keyMesh);
     }
 });
+*/
 
 // padlock
 loader.load('/padlock__key.glb', (gltf) => {
@@ -524,7 +526,7 @@ loader.load('/padlock__key.glb', (gltf) => {
     scene.add(padlockGroup);
 });
 function updateFallingInteractions() {
-    if (clock.getElapsedTime() > 39) {
+    if (clock.getElapsedTime() > 36.5) {
         isPadlockFalling = true;
     }
     const GROUND_Y = -0.77;
@@ -563,7 +565,7 @@ loader.load('/plank.glb', (gltf) => {
 function updatePlankPhysics() {
     // --- TAMBAHAN LOGIKA WAKTU ---
     // Jika waktu > 39 detik, aktifkan jatuhnya papan
-    if (clock.getElapsedTime() > 39) {
+    if (clock.getElapsedTime() > 36.5) {
         isPlankDrop = true;
     }
     // -----------------------------
@@ -734,11 +736,11 @@ function updateDoor() {
     isOpen = false;
 
     // Logika Waktu
-    if (timeElapsed >= 34) {
+    if (timeElapsed >= 38.2) {
         isOpen = true;  // Setelah detik 34: Buka Lagi
-    } else if (timeElapsed >= 29) {
+    } else if (timeElapsed >= 28) {
         isOpen = false; // Antara detik 29 s/d 34: Tutup
-    } else if (timeElapsed >= 24) {
+    } else if (timeElapsed >= 23) {
         isOpen = true;  // Antara detik 24 s/d 29: Buka
     } 
     // Di bawah 24 detik tetap false (tutup) sesuai default di atas
@@ -760,7 +762,7 @@ function updateDrawers() {
     // --- DRAWER KIRI (Buka setelah 28 detik) ---
     if (drawerLeft) {
         // Cek waktu > 28 detik
-        const isLeftOpen = timeElapsed > 28; 
+        const isLeftOpen = timeElapsed > 27; 
         
         // Target Z: -0.85 (Buka), -0.65 (Tutup)
         const targetZLeft = isLeftOpen ? -0.85 : -0.65;
@@ -771,7 +773,7 @@ function updateDrawers() {
     // --- DRAWER KANAN (Buka setelah 27 detik) ---
     if (drawerRight) {
         // Cek waktu > 27 detik
-        const isRightOpen = timeElapsed > 27;
+        const isRightOpen = timeElapsed > 26;
         
         // Target Z: -0.85 (Buka), -0.65 (Tutup)
         const targetZRight = isRightOpen ? -0.85 : -0.65;
@@ -783,13 +785,15 @@ function updateDrawers() {
 function updateLocker() {
     if (!lockerHinge) return;
 
-    const distance = camera.position.distanceTo(lockerHinge.position);
-    const isCloseEnough = distance < 1.0;
-    const isInFront = camera.position.z > lockerHinge.position.z - 0.15;
-    const isOpen = isCloseEnough && isInFront;
+    // Ambil waktu global
+    const time = clock.getElapsedTime();
 
+    const isOpen = (time >= 43.5 && time < 45) || (time >= 49.5 && time < 53);
+
+    // Target Rotasi: 0 (Buka), -90 derajat (Tutup)
     const targetRotation = isOpen ? 0 : -Math.PI * 0.5;
 
+    // Animasi Halus
     lockerHinge.rotation.y = THREE.MathUtils.lerp(
         lockerHinge.rotation.y, 
         targetRotation, 
@@ -799,17 +803,134 @@ function updateLocker() {
 
 function updateCameraCinematics(delta) {
     const time = clock.getElapsedTime();
+    let camIdx = -1;
 
-    // CONTOH: Dari detik 1 sampai detik 5, kamera turun perlahan
-    if (time > 0 && time < 3.0) {
-        
-        // Kecepatan turun (unit per detik)
-        // Kalau mau pelan banget, pakai angka kecil misal 0.1
-        const speed = 0.02; 
-        
-        // Gerakkan Y ke bawah (minus)
-        camera.position.y -= speed * delta;
+    // --- TIMELINE LOGIC ---
+    // Format: Index Array = Nomor Kamera - 1
+    
+    if (time < 4.0) {
+        camIdx = 1; // Kamera 2 (0.00 - 4.00)
+    } else if (time < 5.5) {
+        camIdx = 0; // Kamera 1 (4.00 - 5.50)
+    } else if (time < 7.5) {
+        camIdx = 1; // Kamera 2 (5.50 - 7.50)
+    } else if (time < 10.5) {
+        camIdx = 0; // Kamera 1 (7.50 - 10.50)
+    } else if (time < 13.0) {
+        camIdx = 2; // Kamera 3 (10.50 - 13.00)
+    } else if (time < 14.5) {
+        camIdx = 0; // Kamera 1 (13.00 - 14.50)
+    } else if (time < 20.5) {
+        camIdx = 3; // Kamera 4 (14.50 - 20.50)
+    } else if (time < 22.5) {
+        camIdx = 0; // Kamera 1 (20.50 - 22.50)
+    } else if (time < 28.0) {
+        camIdx = 4; // Kamera 5 (22.50 - 28.00)
+    } else if (time < 31.0) {
+        camIdx = 5; // Kamera 6 (28.00 - 30.50)
+    } else if (time < 33.5) {
+        camIdx = 6; // Kamera 7 (30.50 - 33.00)
+    } else if (time < 36.0) {
+        camIdx = 7; // Kamera 8 (33.00 - 35.00)
+    } else if (time < 38.5) {
+        camIdx = 8; // Kamera 9 (35.00 - 38.00)
+    } else if (time < 40.0) {
+        camIdx = 9; // Kamera 10 (38.00 - 39.50)
+    } else if (time < 42.5) {
+        camIdx = 10; // Kamera 11 (39.50 - 41.00)
+    } else if (time < 53.0) {
+        camIdx = 11; // Kamera 12 (41.00 - 53.00)
+    } else if (time < 63.0) { // 1.03 menit = 63 detik
+        camIdx = 12; // Kamera 13 (53.00 - 63.00)
     }
+
+    // --- TERAPKAN POSISI KAMERA ---
+    // Hanya update jika index valid dan kita masih dalam periode cutscene (< 63 detik)
+    if (camIdx !== -1 && cameraPositions[camIdx]) {
+        const camData = cameraPositions[camIdx];
+        
+        // Pindah posisi
+        camera.position.copy(camData.pos);
+
+        if (time < 4.0) {
+            camera.position.y -= (time * 0.05); 
+        }
+        else if (time > 5.5 && time < 7.5) {
+            camera.position.y -= (time * 0.025);
+        }
+
+        else if (time > 10.5 && time < 13.0) {
+            camera.position.y -= (time * 0.03);
+        }
+
+        // C. Terakhir, kunci arah pandang
+        camera.lookAt(camData.target);
+    }
+}
+
+// ================= FADE EFFECT SETUP =================
+// 1. Membuat layar hitam transparan
+const fadeOverlay = document.createElement('div');
+fadeOverlay.style.position = 'absolute';
+fadeOverlay.style.top = '0';
+fadeOverlay.style.left = '0';
+fadeOverlay.style.width = '100%';
+fadeOverlay.style.height = '100%';
+fadeOverlay.style.backgroundColor = 'black';
+fadeOverlay.style.opacity = '0';
+fadeOverlay.style.pointerEvents = 'none';
+fadeOverlay.style.zIndex = '999';
+document.body.appendChild(fadeOverlay);
+
+// 2. Daftar waktu kapan kamera berganti (Sesuai timeline Anda)
+// Saya ambil angka batas dari logika if-else kamera Anda
+const cutTimes = [
+    4.0, 
+    5.5, 
+    7.5, 
+    10.5, 
+    13.0, 
+    14.5, 
+    20.5, 
+    22.5, 
+    28.0, 
+    31.0, 
+    33.5, 
+    36.0,
+    38.5, 
+    40.0, 
+    42.5, 
+    53.0,
+    63.0
+];
+
+// 3. Fungsi untuk menghitung kegelapan
+function updateFadeEffect() {
+    const time = clock.getElapsedTime();
+    const fadeDuration = 0.25; // Durasi efek (0.5 detik gelap sebelum & sesudah cut)
+    
+    let maxOpacity = 0;
+
+    // Cari waktu cut yang paling dekat dengan waktu sekarang
+    for (let i = 0; i < cutTimes.length; i++) {
+        const cutTime = cutTimes[i];
+        const diff = Math.abs(time - cutTime);
+
+        // Jika waktu sekarang berjarak kurang dari 0.5 detik dari waktu cut
+        if (diff < fadeDuration) {
+            // Hitung opacity: Semakin dekat ke waktu cut, semakin hitam (1)
+            // Di waktu cut pas, opacity = 1. Di batas fadeDuration, opacity = 0.
+            const opacity = 1 - (diff / fadeDuration);
+            
+            // Simpan opacity tertinggi (agar tidak bentrok antar cut yang terlalu dekat)
+            if (opacity > maxOpacity) {
+                maxOpacity = opacity;
+            }
+        }
+    }
+
+    // Terapkan ke layar hitam
+    fadeOverlay.style.opacity = maxOpacity;
 }
 
 // ================= MAIN LOOP =================
@@ -829,7 +950,7 @@ function animate() {
 
         const timeElapsed = clock.getElapsedTime();
 
-        if (timeElapsed < 22) {
+        if (timeElapsed < 21) {
             targetPos.set(-1.50, grannyPivot.position.y, 0);
         } else {
             targetPos.set(0.37, grannyPivot.position.y, 0.73);
@@ -841,6 +962,7 @@ function animate() {
     }
 
     updateCameraCinematics(delta);
+    updateFadeEffect();
     
     updateDoor();
     updateDrawers();
