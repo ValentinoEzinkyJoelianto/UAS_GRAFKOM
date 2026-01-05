@@ -81,12 +81,12 @@ const cameraPositions = [
     },
     {
         //kamera 7
-        pos: new THREE.Vector3(1.32, 1.19, -1.53),
+        pos: new THREE.Vector3(1.25, 1.19, -1.4),
         target: new THREE.Vector3(4.91, 0.83, -4.99)
     },
     {
         //kamera 8
-        pos: new THREE.Vector3(-1.23, 0.78, 1.48),
+        pos: new THREE.Vector3(-1.23, 0.47, 1.79),
         target: new THREE.Vector3(2.17, 1.05, -2.18)
     },
     {
@@ -1084,6 +1084,21 @@ function updateCameraCinematics(delta) {
         else if (time > 10.5 && time < 13.0) {
             camera.position.y -= (time * 0.03);
         }
+        
+        else if (time > 28 && time < 31.0) {
+            camera.position.z += ((time - 28) * 0.29);
+            camera.position.x += ((time - 28) * 0.029);
+        }
+        /*
+        else if (time > 31 && time < 33.5) {
+            camera.position.z += ((time - 31) * 0.29);
+            camera.position.x -= ((time - 31) * 0.15);
+        }
+        */
+       else if (time > 33.5 && time < 36) {
+            camera.position.y += ((time-33.5) * 0.29);
+            camera.position.z -= ((time-33.5) * 0.29);
+       }
 
         // C. Terakhir, kunci arah pandang
         camera.lookAt(camData.target);
