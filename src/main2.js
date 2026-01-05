@@ -70,7 +70,7 @@ const cameraPositions = [
     },
     {
         //kamera 5
-        pos: new THREE.Vector3(0.31, 1.25, -0.09),
+        pos: new THREE.Vector3(0.31, 1.38, -0.09),
         target: new THREE.Vector3(3.29, 0.77, -4.08)
     },
     {
@@ -368,6 +368,28 @@ loader.load('/granny_animated.glb', (gltf) => {
     });
 
     const idleKey = Object.keys(actions).find(n => n.includes('idle_1'));
+    if (idleKey) {
+        activeAction = actions[idleKey];
+        activeAction.play();
+    }
+});
+
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh = gltf.scene;
+    grannyPivot = new THREE.Group();
+    grannyPivot.position.set(-0.65, -1.93, 0); 
+    grannyMesh.scale.set(0.7, 0.7, 0.7);
+    grannyMesh.rotation.y = -Math.PI / 2;
+    grannyPivot.add(grannyMesh);
+    scene.add(grannyPivot);
+
+    mixer = new THREE.AnimationMixer(grannyMesh);
+    gltf.animations.forEach((clip) => {
+        const name = clip.name.toLowerCase();
+        actions[name] = mixer.clipAction(clip);
+    });
+
+    const idleKey = Object.keys(actions).find(n => n.includes('walk'));
     if (idleKey) {
         activeAction = actions[idleKey];
         activeAction.play();
@@ -808,41 +830,114 @@ function updateCameraCinematics(delta) {
     // --- TIMELINE LOGIC ---
     // Format: Index Array = Nomor Kamera - 1
     
-    if (time < 4.0) {
-        camIdx = 1; // Kamera 2 (0.00 - 4.00)
-    } else if (time < 5.5) {
-        camIdx = 0; // Kamera 1 (4.00 - 5.50)
-    } else if (time < 7.5) {
-        camIdx = 1; // Kamera 2 (5.50 - 7.50)
-    } else if (time < 10.5) {
-        camIdx = 0; // Kamera 1 (7.50 - 10.50)
-    } else if (time < 13.0) {
-        camIdx = 2; // Kamera 3 (10.50 - 13.00)
-    } else if (time < 14.5) {
-        camIdx = 0; // Kamera 1 (13.00 - 14.50)
-    } else if (time < 20.5) {
-        camIdx = 3; // Kamera 4 (14.50 - 20.50)
-    } else if (time < 22.5) {
-        camIdx = 0; // Kamera 1 (20.50 - 22.50)
-    } else if (time < 28.0) {
-        camIdx = 4; // Kamera 5 (22.50 - 28.00)
-    } else if (time < 31.0) {
-        camIdx = 5; // Kamera 6 (28.00 - 30.50)
-    } else if (time < 33.5) {
-        camIdx = 6; // Kamera 7 (30.50 - 33.00)
-    } else if (time < 36.0) {
-        camIdx = 7; // Kamera 8 (33.00 - 35.00)
-    } else if (time < 38.5) {
-        camIdx = 8; // Kamera 9 (35.00 - 38.00)
-    } else if (time < 40.0) {
-        camIdx = 9; // Kamera 10 (38.00 - 39.50)
-    } else if (time < 42.5) {
-        camIdx = 10; // Kamera 11 (39.50 - 41.00)
-    } else if (time < 53.0) {
-        camIdx = 11; // Kamera 12 (41.00 - 53.00)
-    } else if (time < 63.0) { // 1.03 menit = 63 detik
-        camIdx = 12; // Kamera 13 (53.00 - 63.00)
+    if (time < 4.0) camIdx = 1; 
+    else if (time < 5.5) camIdx = 0; 
+    else if (time < 7.5) camIdx = 1; 
+    else if (time < 10.5) camIdx = 0; 
+    else if (time < 13.0) camIdx = 2; 
+    else if (time < 14.5) camIdx = 0; 
+    else if (time < 20.5) camIdx = 3; 
+    else if (time < 22.5) camIdx = 0; 
+    else if (time < 28.0) camIdx = 4; // KAMERA 5 (Target kita)
+    else if (time < 31.0) camIdx = 5; 
+    else if (time < 33.5) camIdx = 6; 
+    else if (time < 36.0) camIdx = 7; 
+    else if (time < 38.5) camIdx = 8; 
+    else if (time < 40.0) camIdx = 9; 
+    else if (time < 42.5) camIdx = 10; 
+    else if (time < 53.0) camIdx = 11; 
+    else if (time < 63.0) camIdx = 12;
+
+    if (camIdx === -1 || !cameraPositions[camIdx]) return;
+
+    // ==================================================================
+    // LOGIKA KHUSUS KAMERA 5 (Gerakan Melengkung/Curved Path)
+    // ==================================================================
+    // ==================================================================
+    // LOGIKA KHUSUS KAMERA 5 (Gerak -> Stop -> Gerak)
+    // ==================================================================
+    if (camIdx === 4) {
+        // --- 1. DEFINISI TITIK ---
+        const pStart    = cameraPositions[4].pos;       // Awal
+        const pCorner   = new THREE.Vector3(0.98, 1.38, -1.47); // Checkpoint 1 (SUDUT BELOKAN)
+        const pPause    = new THREE.Vector3(1.51, 1.38, -1.03); // Checkpoint 2 (TEMPAT STOP)
+        const pEnd      = new THREE.Vector3(1.78, 1.38, -1.00); // Akhir (Depan Loker)
+
+        // --- 2. DEFINISI TARGET PANDANGAN ---
+        const tStart = cameraPositions[4].target;
+        const tEnd   = new THREE.Vector3(3.24, -0.27, 3.49);
+
+        // --- 3. PENGATURAN WAKTU (TIMING) ---
+        const t0 = 23.2; // Waktu Mulai
+        
+        const durationMove1 = 2.5; // Total waktu Fase 1 (Start -> Corner -> Pause)
+        const durationStop  = 0.5; 
+        const durationMove2 = 1.2; 
+
+        const t1 = t0 + durationMove1; 
+        const t2 = t1 + durationStop; 
+        const t3 = t2 + durationMove2; 
+
+        // ================= LOGIKA PERGERAKAN =================
+        
+        if (time < t1) {
+            // --- FASE 1: GERAK PATAH-PATAH (LANCIP) ---
+            // Start -> Corner -> Pause
+            
+            // Hitung progress keseluruhan fase 1 (0.0 - 1.0)
+            let progress = (time - t0) / durationMove1;
+            progress = Math.max(0, Math.min(1, progress));
+
+            // Kita bagi perjalanan menjadi 2 bagian (Split di 50% perjalanan)
+            // Bagian A: Start menuju Corner (0% - 50%)
+            // Bagian B: Corner menuju Pause (50% - 100%)
+            
+            if (progress < 0.5) {
+                // === BAGIAN A: START -> CORNER ===
+                // Normalisasi progress (0.0 s/d 0.5 menjadi 0.0 s/d 1.0)
+                let localProgress = progress / 0.5; 
+                camera.position.copy(pStart).lerp(pCorner, localProgress);
+            } else {
+                // === BAGIAN B: CORNER -> PAUSE ===
+                // Normalisasi progress (0.5 s/d 1.0 menjadi 0.0 s/d 1.0)
+                let localProgress = (progress - 0.5) / 0.5;
+                camera.position.copy(pCorner).lerp(pPause, localProgress);
+            }
+            
+            // LookAt: Tetap dibuat halus (smooth) dari awal sampai akhir
+            // Supaya kepala tidak pusing meski badannya belok tajam
+            const currentTarget = new THREE.Vector3().copy(tStart).lerp(tEnd, progress * 0.8);
+            camera.lookAt(currentTarget);
+
+        } else if (time < t2) {
+            // --- FASE 2: BERHENTI SEJENAK (PAUSE) ---
+            camera.position.copy(pPause);
+            
+            // Pandangan tetap di 80%
+            const currentTarget = new THREE.Vector3().copy(tStart).lerp(tEnd, 0.8);
+            camera.lookAt(currentTarget);
+
+        } else if (time < t3) {
+            // --- FASE 3: LANJUT JALAN KE ENDING (LURUS) ---
+            let progress = (time - t2) / durationMove2;
+            progress = Math.max(0, Math.min(1, progress));
+
+            camera.position.copy(pPause).lerp(pEnd, progress);
+
+            // LookAt: Melanjutkan sisa rotasi (80% ke 100%)
+            const lookAtStartPhase3 = new THREE.Vector3().copy(tStart).lerp(tEnd, 0.8);
+            const currentTarget = new THREE.Vector3().copy(lookAtStartPhase3).lerp(tEnd, progress);
+            camera.lookAt(currentTarget);
+
+        } else {
+            // --- FASE 4: SELESAI ---
+            camera.position.copy(pEnd);
+            camera.lookAt(tEnd);
+        }
+
+        return; 
     }
+    // ==================================================================
 
     // --- TERAPKAN POSISI KAMERA ---
     // Hanya update jika index valid dan kita masih dalam periode cutscene (< 63 detik)
@@ -865,6 +960,13 @@ function updateCameraCinematics(delta) {
 
         // C. Terakhir, kunci arah pandang
         camera.lookAt(camData.target);
+    }
+    if (heldKey) {
+        if (camIdx === 6 || camIdx === 8) {
+            heldKey.visible = true;
+        } else {
+            heldKey.visible = false;
+        }
     }
 }
 
@@ -892,7 +994,6 @@ const cutTimes = [
     13.0, 
     14.5, 
     20.5, 
-    22.5, 
     28.0, 
     31.0, 
     33.5, 

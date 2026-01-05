@@ -5,7 +5,8 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 
 // ================= GLOBAL VARIABLES =================
-let mixer, activeAction, grannyPivot;
+let mixer = []
+let activeAction, grannyPivot, grannyPivot1, grannyPivot2;
 let actions = {};
 const clock = new THREE.Clock();
 let isAttacking = false;
@@ -317,25 +318,65 @@ loader.load('/granny_housegranny.glb', (gltf) => {
 // 2. Load Granny
 loader.load('/granny_animated.glb', (gltf) => {
     const grannyMesh = gltf.scene;
-    console.groupEnd();
     grannyPivot = new THREE.Group();
     grannyPivot.position.set(-0.65, -1.93, 0); 
     grannyMesh.scale.set(0.7, 0.7, 0.7);
     grannyMesh.rotation.y = -Math.PI / 2;
     grannyPivot.add(grannyMesh);
     scene.add(grannyPivot);
-
-    mixer = new THREE.AnimationMixer(grannyMesh);
+    const localMixer = new THREE.AnimationMixer(grannyMesh);
+    mixer.push(localMixer);
     gltf.animations.forEach((clip) => {
         const name = clip.name.toLowerCase();
-        actions[name] = mixer.clipAction(clip);
+        const action = localMixer.clipAction(clip); 
+        if (name.includes('idle_1')) {
+            action.play();
+        }
     });
+});
 
-    const idleKey = Object.keys(actions).find(n => n.includes('idle_1'));
-    if (idleKey) {
-        activeAction = actions[idleKey];
-        activeAction.play();
-    }
+// 2.1. Load Granny
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh1 = gltf.scene;
+    grannyPivot1 = new THREE.Group();
+    grannyPivot1.position.set(-2.13, -0.78, 0.32); 
+    grannyMesh1.scale.set(0.7, 0.7, 0.7);
+    grannyMesh1.rotation.y = -Math.PI / 2;
+    const targetLookAt = new THREE.Vector3(-1.03, -0.53, 5.19); 
+    grannyPivot1.lookAt(targetLookAt);
+    grannyPivot1.add(grannyMesh1);
+    scene.add(grannyPivot1);
+    const localMixer = new THREE.AnimationMixer(grannyMesh1);
+    mixer.push(localMixer);
+    gltf.animations.forEach((clip) => {
+        const name = clip.name.toLowerCase();
+        const action = localMixer.clipAction(clip);
+        if (name.includes('walk')) {
+            action.play();
+        }
+    });
+});
+
+// 2.2. Load Granny 3 (Posisi Baru)
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh2 = gltf.scene;
+    grannyPivot2 = new THREE.Group();
+    grannyPivot2.position.set(-1.01, -0.14, 1.23); 
+    grannyMesh2.scale.set(0.7, 0.7, 0.7);
+    grannyMesh2.rotation.y = -Math.PI / 2;
+    const targetLookAt = new THREE.Vector3(-0.91, 0.38, -3.71); 
+    grannyPivot2.lookAt(targetLookAt);
+    grannyPivot2.add(grannyMesh2);
+    scene.add(grannyPivot2);
+    const localMixer = new THREE.AnimationMixer(grannyMesh2);
+    mixer.push(localMixer);
+
+    gltf.animations.forEach((clip) => {
+        const name = clip.name.toLowerCase();
+        if (name.includes('walk')) { 
+            localMixer.clipAction(clip).play();
+        }
+    });
 });
 
 // 3. Load Locker Door
@@ -574,6 +615,23 @@ document.addEventListener('keydown', (e) => {
         isPlankDrop = true;
         isPadlockFalling = true;
     }
+    if (e.code === 'KeyP') {
+            // 1. Ambil posisi kamera saat ini
+            const p = camera.position;
+            
+            // 2. Ambil arah pandang kamera (vektor depan)
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            
+            // 3. Hitung titik target (posisi + arah * jarak pandang 5 meter)
+            const target = new THREE.Vector3().copy(p).add(dir.multiplyScalar(5));
+    
+            console.clear();
+            console.log("=== DATA KAMERA UTK COPY PASTE ===");
+            console.log(`pos: new THREE.Vector3(${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}),`);
+            console.log(`target: new THREE.Vector3(${target.x.toFixed(2)}, ${target.y.toFixed(2)}, ${target.z.toFixed(2)})`);
+            console.log("==================================");
+        }
 });
 document.addEventListener('keyup', (e) => keyState[e.code] = false);
 
@@ -719,7 +777,9 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta(); 
 
-    if (mixer) mixer.update(delta);
+    for (const m of mixer) {
+        m.update(delta);
+    }
 
     const x = camera.position.x.toFixed(2);
     const y = camera.position.y.toFixed(2);
