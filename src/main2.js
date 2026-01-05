@@ -6,7 +6,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 
 // ================= GLOBAL VARIABLES =================
 let mixer = []
-let activeAction, grannyPivot, grannyPivot1, grannyPivot2, grannyPivot3;
+let activeAction, grannyPivot, grannyPivot1, grannyPivot2, grannyPivot3, grannyPivot4;
 let actions = {};
 const clock = new THREE.Clock();
 let isAttacking = false;
@@ -76,7 +76,7 @@ const cameraPositions = [
     },
     {
         //kamera 6
-        pos: new THREE.Vector3(-1.90, 0.15, 0.06),
+        pos: new THREE.Vector3(-1.90, 0.2, 0.06),
         target: new THREE.Vector3(-5.33, -0.76, 3.58)
     },
     {
@@ -96,7 +96,7 @@ const cameraPositions = [
     },
     {
         //kamera 10
-        pos: new THREE.Vector3(0.05, 1.50, -0.06),
+        pos: new THREE.Vector3(0.55, 1.50, -0.06),
         target: new THREE.Vector3(4.60, 0.50, -1.85)
     },
     {
@@ -373,17 +373,30 @@ loader.load('/granny_animated.glb', (gltf) => {
     });
 });
 
-// 2.1. Load Granny
+// 2.1. Load Granny (Menempel di Kamera)
 loader.load('/granny_animated.glb', (gltf) => {
     const grannyMesh1 = gltf.scene;
     grannyPivot1 = new THREE.Group();
-    grannyPivot1.position.set(-2.13, -0.78, 0.32); 
+    
+    // 1. ATUR POSISI RELATIF (Di depan mata)
+    // X=0 (Tengah), Y=-0.5 (Agak bawah dikit), Z=-1.5 (Jarak 1.5 meter di depan lensa)
+    grannyPivot1.position.set(0, -0.9, -0.25); 
+
+    // 2. SKALA
     grannyMesh1.scale.set(0.7, 0.7, 0.7);
-    grannyMesh1.rotation.y = -Math.PI / 2;
-    const targetLookAt = new THREE.Vector3(-1.03, -0.53, 5.19); 
-    grannyPivot1.lookAt(targetLookAt);
+    
+    // 3. ROTASI (PENTING)
+    // Hapus lookAt yang lama karena itu pakai koordinat dunia.
+    // Kita set manual supaya dia menghadap ke kamera.
+    grannyMesh1.rotation.y = -Math.PI / 2; // Sesuaikan ini kalau dia menghadap samping
+    // Jika masih miring, coba ubah rotation Y pivotnya:
+    grannyPivot1.rotation.y = Math.PI * 4 / 3 ; // Memutar balik agar wajah menghadap kita
+
     grannyPivot1.add(grannyMesh1);
-    scene.add(grannyPivot1);
+    
+    // 4. TEMPEL KE KAMERA (Bukan scene.add)
+    camera.add(grannyPivot1); 
+
     const localMixer = new THREE.AnimationMixer(grannyMesh1);
     mixer.push(localMixer);
     gltf.animations.forEach((clip) => {
@@ -395,17 +408,26 @@ loader.load('/granny_animated.glb', (gltf) => {
     });
 });
 
-// 2.2. Load Granny
+// 2.2. Load Granny (Menempel di Kamera - Sama seperti Pivot1)
 loader.load('/granny_animated.glb', (gltf) => {
     const grannyMesh2 = gltf.scene;
     grannyPivot2 = new THREE.Group();
-    grannyPivot2.position.set(-1.01, -0.14, 1.23); 
+    
+    // 1. ATUR POSISI RELATIF (Sama persis dengan Pivot1)
+    grannyPivot2.position.set(0, -0.9, -0.25); 
+
+    // 2. SKALA
     grannyMesh2.scale.set(0.7, 0.7, 0.7);
-    grannyMesh2.rotation.y = -Math.PI / 2;
-    const targetLookAt = new THREE.Vector3(-0.91, 0.38, -3.71); 
-    grannyPivot2.lookAt(targetLookAt);
+    
+    // 3. ROTASI
+    grannyMesh2.rotation.y = -Math.PI / 2; 
+    grannyPivot2.rotation.y = Math.PI * 4 / 3; // Menghadap ke kamera
+
     grannyPivot2.add(grannyMesh2);
-    scene.add(grannyPivot2);
+    
+    // 4. TEMPEL KE KAMERA
+    camera.add(grannyPivot2); 
+
     const localMixer = new THREE.AnimationMixer(grannyMesh2);
     mixer.push(localMixer);
 
@@ -417,17 +439,26 @@ loader.load('/granny_animated.glb', (gltf) => {
     });
 });
 
-// 2.3. Load Granny
+// 2.3. Load Granny (Menempel di Kamera - Sama seperti Pivot1)
 loader.load('/granny_animated.glb', (gltf) => {
     const grannyMesh3 = gltf.scene;
     grannyPivot3 = new THREE.Group();
-    grannyPivot3.position.set(0.21, 0.52, -0.10); 
+
+    // 1. ATUR POSISI RELATIF (Sama persis dengan Pivot1)
+    grannyPivot3.position.set(0, -0.9, -0.25); 
+
+    // 2. SKALA
     grannyMesh3.scale.set(0.7, 0.7, 0.7);
+    
+    // 3. ROTASI
     grannyMesh3.rotation.y = -Math.PI / 2;
-    const targetLookAt = new THREE.Vector3(3.40, 0.56, -3.96); 
-    grannyPivot3.lookAt(targetLookAt);
+    grannyPivot3.rotation.y = Math.PI * 4 / 3; // Menghadap ke kamera
+
     grannyPivot3.add(grannyMesh3);
-    scene.add(grannyPivot3);
+    
+    // 4. TEMPEL KE KAMERA
+    camera.add(grannyPivot3); 
+
     const localMixer = new THREE.AnimationMixer(grannyMesh3);
     mixer.push(localMixer);
 
@@ -436,6 +467,27 @@ loader.load('/granny_animated.glb', (gltf) => {
         if (name.includes('walk')) { 
             localMixer.clipAction(clip).play();
         }
+    });
+});
+
+// 2.4. Load Granny (GAK NEMPEL DI CAM) JANGAN LUPA DIUBAH
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh4 = gltf.scene;
+    grannyPivot4 = new THREE.Group();
+    grannyPivot4.position.set(-0.65, -1.93, 0); 
+    grannyMesh4.scale.set(0.7, 0.7, 0.7);
+    grannyMesh4.rotation.y = -Math.PI / 2;
+    grannyPivot4.add(grannyMesh);
+    scene.add(grannyPivot4);
+    const localMixer = new THREE.AnimationMixer(grannyMesh4);
+    mixer.push(localMixer);
+    gltf.animations.forEach((clip) => {
+    const name = clip.name.toLowerCase();
+    const action = localMixer.clipAction(clip); 
+    if (name.includes('walk')) {
+        action.startAt(localMixer.time + 2.3);
+        action.play();
+    }
     });
 });
 
@@ -908,6 +960,7 @@ function updateCameraCinematics(delta) {
     if (grannyPivot1) grannyPivot1.visible = false;
     if (grannyPivot2) grannyPivot2.visible = false;
     if (grannyPivot3) grannyPivot3.visible = false;
+    if (grannyPivot4) grannyPivot4.visible = false;
 
     if (camIdx === 5) {
         if (grannyPivot1) grannyPivot1.visible = true;
@@ -917,8 +970,12 @@ function updateCameraCinematics(delta) {
         if (grannyPivot2) grannyPivot2.visible = true;
     }
     
-    if (camIdx === 9 || camIdx === 10) {
+    if (camIdx === 9) {
         if (grannyPivot3) grannyPivot3.visible = true;
+    }
+
+    if (camIdx === 10) {
+        if (grannyPivot4) grannyPivot4.visible = true;
     }
 
     if (camIdx === -1 || !cameraPositions[camIdx]) return;
@@ -946,7 +1003,7 @@ function updateCameraCinematics(delta) {
 
         const t1 = t0 + durationMove1; 
         const t2 = t1 + durationStop; 
-        const t3 = t2 + durationMove2; 
+        const t3 = t2 + durationMove2;
 
         // ================= LOGIKA PERGERAKAN =================
         
