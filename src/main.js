@@ -798,7 +798,7 @@ function animate() {
         // 1. Tentukan target koordinat berdasarkan waktu
         if (timeElapsed < 23) {
             // SEBELUM 22 Detik: Target ke kiri (-1.50)
-            targetPos.set(-1.50, grannyPivot.position.y, 0);
+            targetPos.set(-1.65, grannyPivot.position.y, 0.01);
         } else {
             // SETELAH 22 Detik: Target ke kanan (0.65, ..., 0.88)
             targetPos.set(0.37, grannyPivot.position.y, 0.73);

@@ -5,7 +5,8 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 
 // ================= GLOBAL VARIABLES =================
-let mixer, activeAction, grannyPivot;
+let mixer = []
+let activeAction, grannyPivot, grannyPivot1, grannyPivot2;
 let actions = {};
 const clock = new THREE.Clock();
 let isAttacking = false;
@@ -75,8 +76,8 @@ const cameraPositions = [
     },
     {
         //kamera 6
-        pos: new THREE.Vector3(-2.07, -0.00, 0.20),
-        target: new THREE.Vector3(-4.10, -0.17, 4.77)
+        pos: new THREE.Vector3(-1.90, 0.15, 0.06),
+        target: new THREE.Vector3(-5.33, -0.76, 3.58)
     },
     {
         //kamera 7
@@ -85,8 +86,8 @@ const cameraPositions = [
     },
     {
         //kamera 8
-        pos: new THREE.Vector3(-1.25, 0.29, 1.66),
-        target: new THREE.Vector3(1.11, 0.66, -2.73)
+        pos: new THREE.Vector3(-1.23, 0.78, 1.48),
+        target: new THREE.Vector3(2.17, 1.05, -2.18)
     },
     {
         //kamera 9
@@ -360,40 +361,60 @@ loader.load('/granny_animated.glb', (gltf) => {
     grannyMesh.rotation.y = -Math.PI / 2;
     grannyPivot.add(grannyMesh);
     scene.add(grannyPivot);
-
-    mixer = new THREE.AnimationMixer(grannyMesh);
+    const localMixer = new THREE.AnimationMixer(grannyMesh);
+    mixer.push(localMixer);
     gltf.animations.forEach((clip) => {
-        const name = clip.name.toLowerCase();
-        actions[name] = mixer.clipAction(clip);
-    });
-
-    const idleKey = Object.keys(actions).find(n => n.includes('idle_1'));
-    if (idleKey) {
-        activeAction = actions[idleKey];
-        activeAction.play();
+    const name = clip.name.toLowerCase();
+    const action = localMixer.clipAction(clip); 
+    if (name.includes('idle_1')) {
+        action.startAt(localMixer.time + 2.3);
+        action.play();
     }
+    });
 });
 
+// 2.1. Load Granny
 loader.load('/granny_animated.glb', (gltf) => {
-    const grannyMesh = gltf.scene;
-    grannyPivot = new THREE.Group();
-    grannyPivot.position.set(-0.65, -1.93, 0); 
-    grannyMesh.scale.set(0.7, 0.7, 0.7);
-    grannyMesh.rotation.y = -Math.PI / 2;
-    grannyPivot.add(grannyMesh);
-    scene.add(grannyPivot);
-
-    mixer = new THREE.AnimationMixer(grannyMesh);
+    const grannyMesh1 = gltf.scene;
+    grannyPivot1 = new THREE.Group();
+    grannyPivot1.position.set(-2.13, -0.78, 0.32); 
+    grannyMesh1.scale.set(0.7, 0.7, 0.7);
+    grannyMesh1.rotation.y = -Math.PI / 2;
+    const targetLookAt = new THREE.Vector3(-1.03, -0.53, 5.19); 
+    grannyPivot1.lookAt(targetLookAt);
+    grannyPivot1.add(grannyMesh1);
+    scene.add(grannyPivot1);
+    const localMixer = new THREE.AnimationMixer(grannyMesh1);
+    mixer.push(localMixer);
     gltf.animations.forEach((clip) => {
         const name = clip.name.toLowerCase();
-        actions[name] = mixer.clipAction(clip);
+        const action = localMixer.clipAction(clip);
+        if (name.includes('walk')) {
+            action.play();
+        }
     });
+});
 
-    const idleKey = Object.keys(actions).find(n => n.includes('walk'));
-    if (idleKey) {
-        activeAction = actions[idleKey];
-        activeAction.play();
-    }
+// 2.2. Load Granny 3 (Posisi Baru)
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh2 = gltf.scene;
+    grannyPivot2 = new THREE.Group();
+    grannyPivot2.position.set(-1.01, -0.14, 1.23); 
+    grannyMesh2.scale.set(0.7, 0.7, 0.7);
+    grannyMesh2.rotation.y = -Math.PI / 2;
+    const targetLookAt = new THREE.Vector3(-0.91, 0.38, -3.71); 
+    grannyPivot2.lookAt(targetLookAt);
+    grannyPivot2.add(grannyMesh2);
+    scene.add(grannyPivot2);
+    const localMixer = new THREE.AnimationMixer(grannyMesh2);
+    mixer.push(localMixer);
+
+    gltf.animations.forEach((clip) => {
+        const name = clip.name.toLowerCase();
+        if (name.includes('walk')) { 
+            localMixer.clipAction(clip).play();
+        }
+    });
 });
 
 // 3. Load Locker Door
@@ -837,8 +858,8 @@ function updateCameraCinematics(delta) {
     else if (time < 13.0) camIdx = 2; 
     else if (time < 14.5) camIdx = 0; 
     else if (time < 20.5) camIdx = 3; 
-    else if (time < 22.5) camIdx = 0; 
-    else if (time < 28.0) camIdx = 4; // KAMERA 5 (Target kita)
+    else if (time < 22.0) camIdx = 0; 
+    else if (time < 28.0) camIdx = 4;
     else if (time < 31.0) camIdx = 5; 
     else if (time < 33.5) camIdx = 6; 
     else if (time < 36.0) camIdx = 7; 
@@ -848,11 +869,19 @@ function updateCameraCinematics(delta) {
     else if (time < 53.0) camIdx = 11; 
     else if (time < 63.0) camIdx = 12;
 
+    if (grannyPivot1) grannyPivot1.visible = false;
+    if (grannyPivot2) grannyPivot2.visible = false;
+
+    if (camIdx === 5) {
+        if (grannyPivot1) grannyPivot1.visible = true;
+    }
+    
+    if (camIdx === 7) {
+        if (grannyPivot2) grannyPivot2.visible = true;
+    }
+
     if (camIdx === -1 || !cameraPositions[camIdx]) return;
 
-    // ==================================================================
-    // LOGIKA KHUSUS KAMERA 5 (Gerakan Melengkung/Curved Path)
-    // ==================================================================
     // ==================================================================
     // LOGIKA KHUSUS KAMERA 5 (Gerak -> Stop -> Gerak)
     // ==================================================================
@@ -1039,7 +1068,9 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta(); 
 
-    if (mixer) mixer.update(delta);
+    for (const m of mixer) {
+        m.update(delta);
+    }
 
     const x = camera.position.x.toFixed(2);
     const y = camera.position.y.toFixed(2);
@@ -1052,7 +1083,7 @@ function animate() {
         const timeElapsed = clock.getElapsedTime();
 
         if (timeElapsed < 21) {
-            targetPos.set(-1.50, grannyPivot.position.y, 0);
+            targetPos.set(-1.65, grannyPivot.position.y, 0);
         } else {
             targetPos.set(0.37, grannyPivot.position.y, 0.73);
         }
