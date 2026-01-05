@@ -615,9 +615,6 @@ loader.load('/plank.glb', (gltf) => {
     plankPivot = new THREE.Group();
     plankPivot.position.set(0.34, 0, 2.62); 
 
-    const axesHelper = new THREE.AxesHelper(2);
-    plankPivot.add(axesHelper);
-
     plankPivot.add(plankMesh);
     plankMesh.position.set(-0.37, 0.4, 0); 
 
@@ -1050,6 +1047,7 @@ const cutTimes = [
     13.0, 
     14.5, 
     20.5, 
+    22.0,
     28.0, 
     31.0, 
     33.5, 
