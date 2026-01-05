@@ -6,7 +6,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 
 // ================= GLOBAL VARIABLES =================
 let mixer = []
-let activeAction, grannyPivot, grannyPivot1, grannyPivot2;
+let activeAction, grannyPivot, grannyPivot1, grannyPivot2, grannyPivot3;
 let actions = {};
 const clock = new THREE.Clock();
 let isAttacking = false;
@@ -369,6 +369,28 @@ loader.load('/granny_animated.glb', (gltf) => {
     grannyPivot2.add(grannyMesh2);
     scene.add(grannyPivot2);
     const localMixer = new THREE.AnimationMixer(grannyMesh2);
+    mixer.push(localMixer);
+
+    gltf.animations.forEach((clip) => {
+        const name = clip.name.toLowerCase();
+        if (name.includes('walk')) { 
+            localMixer.clipAction(clip).play();
+        }
+    });
+});
+
+// 2.3. Load Granny
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh3 = gltf.scene;
+    grannyPivot3 = new THREE.Group();
+    grannyPivot3.position.set(0.21, 0.52, -0.10); 
+    grannyMesh3.scale.set(0.7, 0.7, 0.7);
+    grannyMesh3.rotation.y = -Math.PI / 2;
+    const targetLookAt = new THREE.Vector3(3.40, 0.56, -3.96); 
+    grannyPivot3.lookAt(targetLookAt);
+    grannyPivot3.add(grannyMesh3);
+    scene.add(grannyPivot3);
+    const localMixer = new THREE.AnimationMixer(grannyMesh3);
     mixer.push(localMixer);
 
     gltf.animations.forEach((clip) => {
