@@ -6,7 +6,9 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 
 // ================= GLOBAL VARIABLES =================
 let mixer = []
-let activeAction, grannyPivot, grannyPivot1, grannyPivot2, grannyPivot3, grannyPivot4;
+let activeAction, grannyPivot, grannyPivot1, grannyPivot2, grannyPivot3, grannyPivot4, grannyPivot5, grannyPivot6;
+let granny5Actions = {};
+let hasGranny5Hit = false;
 let actions = {};
 const clock = new THREE.Clock();
 let isAttacking = false;
@@ -81,8 +83,8 @@ const cameraPositions = [
     },
     {
         //kamera 7
-        pos: new THREE.Vector3(1.25, 1.19, -1.4),
-        target: new THREE.Vector3(4.91, 0.83, -4.99)
+        pos: new THREE.Vector3(3.30, 1.33, 0.58),
+        target: new THREE.Vector3(-0.54, 1.16, 3.78)
     },
     {
         //kamera 8
@@ -111,8 +113,8 @@ const cameraPositions = [
     },
     {
         //kamera 13
-        pos: new THREE.Vector3(-0.46, -0.24, 2.08),
-        target: new THREE.Vector3(-5.46, -0.26, 1.99)
+        pos: new THREE.Vector3(-0.78, -0.28, 2.13),
+        target: new THREE.Vector3(-5.77, 0.02, 2.13)
     }
 ];
 let currentCamIndex = -1; // -1 artinya belum menggunakan preset, masih default
@@ -364,12 +366,15 @@ loader.load('/granny_animated.glb', (gltf) => {
     const localMixer = new THREE.AnimationMixer(grannyMesh);
     mixer.push(localMixer);
     gltf.animations.forEach((clip) => {
-    const name = clip.name.toLowerCase();
-    const action = localMixer.clipAction(clip); 
-    if (name.includes('idle_1')) {
-        action.startAt(localMixer.time + 2.3);
-        action.play();
-    }
+        const name = clip.name.toLowerCase();
+        const action = localMixer.clipAction(clip); 
+        
+        if (name.includes('idle_1')) {
+            action.setLoop(THREE.LoopOnce);
+            action.clampWhenFinished = true; 
+            action.startAt(localMixer.time + 2.3);
+            action.play();
+        }
     });
 });
 
@@ -474,10 +479,11 @@ loader.load('/granny_animated.glb', (gltf) => {
 loader.load('/granny_animated.glb', (gltf) => {
     const grannyMesh4 = gltf.scene;
     grannyPivot4 = new THREE.Group();
-    grannyPivot4.position.set(-0.65, -1.93, 0); 
+    grannyPivot4.position.set(0.83, 0.59, -1.14); 
+    grannyPivot4.lookAt(5.49, 1.0, -3.25);
     grannyMesh4.scale.set(0.7, 0.7, 0.7);
     grannyMesh4.rotation.y = -Math.PI / 2;
-    grannyPivot4.add(grannyMesh);
+    grannyPivot4.add(grannyMesh4);
     scene.add(grannyPivot4);
     const localMixer = new THREE.AnimationMixer(grannyMesh4);
     mixer.push(localMixer);
@@ -488,6 +494,61 @@ loader.load('/granny_animated.glb', (gltf) => {
         action.startAt(localMixer.time + 2.3);
         action.play();
     }
+    });
+});
+
+// 2.5. Load Granny (GAK NEMPEL DI CAM) JANGAN LUPA DIUBAH
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh5 = gltf.scene;
+    grannyPivot5 = new THREE.Group();
+    grannyPivot5.position.set(-0.70, 0.58, 0.13); 
+    grannyPivot5.lookAt(-0.51, 0.50, -4.74);
+    grannyMesh5.scale.set(0.7, 0.7, 0.7);
+    grannyMesh5.rotation.y = -Math.PI / 2;
+    grannyPivot5.visible = false;
+    grannyPivot5.add(grannyMesh5);
+    scene.add(grannyPivot5);
+
+    const localMixer = new THREE.AnimationMixer(grannyMesh5);
+    mixer.push(localMixer);
+
+    gltf.animations.forEach((clip) => {
+        const action = localMixer.clipAction(clip);
+        const name = clip.name.toLowerCase();
+        
+        if (name.includes('walk')) {
+            granny5Actions['walk'] = action;
+        } else if (name.includes('hit')) {
+            granny5Actions['hit'] = action;
+            action.loop = THREE.LoopOnce;
+            action.clampWhenFinished = true;
+        }
+    });
+});
+
+// 2.6. Load Granny Pivot 6 (BARU)
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh6 = gltf.scene;
+    grannyPivot6 = new THREE.Group();
+    grannyPivot6.position.set(-1.53, -0.79, 2.13); 
+    grannyPivot6.lookAt(3.47, -0.59, 2.24);
+    grannyMesh6.scale.set(0.7, 0.7, 0.7);
+    grannyMesh6.rotation.y = -Math.PI / 2;
+    grannyPivot6.visible = false; 
+    grannyPivot6.add(grannyMesh6);
+    scene.add(grannyPivot6);
+    const localMixer = new THREE.AnimationMixer(grannyMesh6);
+    mixer.push(localMixer);
+
+    gltf.animations.forEach((clip) => {
+        const name = clip.name.toLowerCase();
+        
+        if (name.includes('hit') || name.includes('walk')) { 
+            const action = localMixer.clipAction(clip);
+            action.setLoop(THREE.LoopOnce); 
+            action.clampWhenFinished = true;
+            action.play();
+        }
     });
 });
 
@@ -643,7 +704,7 @@ loader.load('/padlock__key.glb', (gltf) => {
     scene.add(padlockGroup);
 });
 function updateFallingInteractions() {
-    if (clock.getElapsedTime() > 36.5) {
+    if (clock.getElapsedTime() > 37.5) {
         isPadlockFalling = true;
     }
     const GROUND_Y = -0.77;
@@ -679,7 +740,7 @@ loader.load('/plank.glb', (gltf) => {
 function updatePlankPhysics() {
     // --- TAMBAHAN LOGIKA WAKTU ---
     // Jika waktu > 39 detik, aktifkan jatuhnya papan
-    if (clock.getElapsedTime() > 36.5) {
+    if (clock.getElapsedTime() > 37.5) {
         isPlankDrop = true;
     }
     // -----------------------------
@@ -919,7 +980,7 @@ function updateLocker() {
     // Ambil waktu global
     const time = clock.getElapsedTime();
 
-    const isOpen = (time >= 43.5 && time < 45) || (time >= 49.5 && time < 53);
+    const isOpen = (time >= 43.5 && time < 45) || (time >= 48.5 && time < 53);
 
     // Target Rotasi: 0 (Buka), -90 derajat (Tutup)
     const targetRotation = isOpen ? 0 : -Math.PI * 0.5;
@@ -976,6 +1037,66 @@ function updateCameraCinematics(delta) {
 
     if (camIdx === 10) {
         if (grannyPivot4) grannyPivot4.visible = true;
+        if (grannyPivot4) {
+            // 1. Tentukan Tujuan
+            const target = new THREE.Vector3(2.46, 0.62, -2.02);
+            
+            // 2. Hitung Jarak ke Tujuan
+            const distance = grannyPivot4.position.distanceTo(target);
+            
+            if (distance > 0.1) {
+                const speed = 0.0025;
+                
+                // Hitung arah
+                const direction = new THREE.Vector3().subVectors(target, grannyPivot4.position).normalize();
+                
+                // Geser posisi
+                grannyPivot4.position.add(direction.multiplyScalar(speed));
+            } 
+            else {
+            }
+        }
+    }
+
+    if (camIdx === 11) {
+        if (grannyPivot5) {
+            grannyPivot5.visible = true;
+
+            const attackZ = -2.10; 
+            const speed = 0.0055; 
+
+            if (grannyPivot5.position.z > attackZ) {
+                
+                // Pastikan animasi jalan yang main
+                if (granny5Actions['walk'] && !granny5Actions['walk'].isRunning() && !hasGranny5Hit) {
+                    granny5Actions['walk'].play();
+                }
+                grannyPivot5.position.z -= speed * (delta * 60); 
+
+            } else {
+                // --- SUDAH SAMPAI DEPAN MUKA (Jarak Serang) ---
+                grannyPivot5.position.z = attackZ; // Kunci posisi
+                
+                if (!hasGranny5Hit) {
+                    hasGranny5Hit = true; // Tandai agar tidak loop
+                    
+                    // GANTI ANIMASI KE ATTACK
+                    if (granny5Actions['walk']) granny5Actions['walk'].fadeOut(0.2);
+                    
+                    if (granny5Actions['hit']) {
+                        granny5Actions['hit'].reset();
+                        granny5Actions['hit'].fadeIn(0.2);
+                        granny5Actions['hit'].play();
+                    }
+                }
+            }
+        }
+    }
+
+    if (camIdx === 12) {
+        if (grannyPivot6) {
+            grannyPivot6.visible = true;
+        }  
     }
 
     if (camIdx === -1 || !cameraPositions[camIdx]) return;
@@ -997,7 +1118,7 @@ function updateCameraCinematics(delta) {
         // --- 3. PENGATURAN WAKTU (TIMING) ---
         const t0 = 23.2; // Waktu Mulai
         
-        const durationMove1 = 2.5; // Total waktu Fase 1 (Start -> Corner -> Pause)
+        const durationMove1 = 2.8; // Total waktu Fase 1 (Start -> Corner -> Pause)
         const durationStop  = 0.5; 
         const durationMove2 = 1.2; 
 
@@ -1073,6 +1194,7 @@ function updateCameraCinematics(delta) {
         
         // Pindah posisi
         camera.position.copy(camData.pos);
+        camera.lookAt(camData.target);
 
         if (time < 4.0) {
             camera.position.y -= (time * 0.05); 
@@ -1089,24 +1211,186 @@ function updateCameraCinematics(delta) {
             camera.position.z += ((time - 28) * 0.29);
             camera.position.x += ((time - 28) * 0.029);
         }
-        /*
+        
         else if (time > 31 && time < 33.5) {
             camera.position.z += ((time - 31) * 0.29);
             camera.position.x -= ((time - 31) * 0.15);
         }
-        */
-       else if (time > 33.5 && time < 36) {
-            camera.position.y += ((time-33.5) * 0.29);
-            camera.position.z -= ((time-33.5) * 0.29);
-       }
+        
+        else if (time > 33.5 && time < 36) {
+                camera.position.y += ((time-33.5) * 0.29);
+                camera.position.z -= ((time-33.5) * 0.29);
+        }
 
-        // C. Terakhir, kunci arah pandang
-        camera.lookAt(camData.target);
+        else if (time > 36 && time < 38.5) {
+            const speedDuration = 1.0; 
+    
+            const alpha = Math.min((time - 36) / speedDuration, 1.0);
+
+            const startPos = new THREE.Vector3(-0.73, -0.04, 2.03);
+            const endPos   = new THREE.Vector3(-0.61, -0.04, 2.13);
+            
+            const startLook = new THREE.Vector3(1.30, -0.50, 6.58); 
+            const endLook   = new THREE.Vector3(1.17, -0.50, 6.87);
+
+            // 3. Jalankan Interpolasi (Lerp)
+            camera.position.lerpVectors(startPos, endPos, alpha);
+            
+            const tempLook = new THREE.Vector3().lerpVectors(startLook, endLook, alpha);
+            camera.lookAt(tempLook);
+        }
+
+        else if (time > 38.5 && time < 40) {
+            const alpha = (time - 38.5) * 0.29;
+
+            const startPos = new THREE.Vector3(0.55, 1.50, -0.06);
+            const endPos   = new THREE.Vector3(0.83, 1.50, -1.14);
+
+            const startLook = new THREE.Vector3(4.60, 0.50, -1.85);
+            const endLook   = new THREE.Vector3(5.49, 1.0, -3.25);
+
+            camera.position.lerpVectors(startPos, endPos, alpha);
+
+            const tempLook = new THREE.Vector3().lerpVectors(startLook, endLook, alpha);
+            camera.lookAt(tempLook);
+        }
+
+        else if (time > 42.5 && time < 53.0) {
+            // --- DEFINISI KOORDINAT ---
+            const standPos = new THREE.Vector3(-0.70, 1.47, -2.55); // Posisi Berdiri
+            const zoomPos  = new THREE.Vector3(-0.70, 1.54, -2.40); // Posisi Zoom (Dekat Pintu)
+            const floorPos = new THREE.Vector3(-0.70, 0.70, -2.40); // Posisi Lantai (Jatuh)
+
+            // --- FASE 1: JALAN MASUK (42.5 - 44.5) ---
+            if (time < 44.5) {
+                const startPos = new THREE.Vector3(-0.66, 1.47, -1.46);
+                const startLook = new THREE.Vector3(-0.53, 1.00, -6.45);
+                const endLook = new THREE.Vector3(-0.53, 1.00, -6.45);
+
+                const moveDuration = 2.0;
+                const progress = (time - 42.5) / moveDuration;
+
+                camera.position.lerpVectors(startPos, standPos, progress);
+                const currentLook = new THREE.Vector3().lerpVectors(startLook, endLook, progress);
+                camera.lookAt(currentLook);
+            } 
+            
+            // --- FASE 2: SUDAH DI DALAM (44.5 ke atas) ---
+            else {
+                // A. LOGIKA ROTASI 180 DERAJAT (Menghadap Pintu)
+                const rotStart = 44.5;
+                const rotDuration = 0.5;
+                let rotProgress = (time - rotStart) / rotDuration;
+                if (rotProgress > 1.0) rotProgress = 1.0;
+
+                // Hitung arah pandang ke pintu (setelah putar)
+                const endLook = new THREE.Vector3(-0.53, 1.00, -6.45); // Tembok belakang
+                const originalDir = new THREE.Vector3().subVectors(endLook, standPos);
+                const angleToRotate = Math.PI * rotProgress; // Putar 180 derajat
+                const rotatedDir = originalDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angleToRotate);
+                
+                // Ini target pandangan standar ke arah pintu
+                let lookTarget = new THREE.Vector3().addVectors(standPos, rotatedDir);
+
+
+                // B. LOGIKA URUTAN KEJADIAN (Zoom -> Hit -> Jatuh)
+                
+                // Diam menunggu Granny datang & pintu terbuka
+                if (time < 49.0) {
+                    camera.position.copy(standPos); 
+                    camera.lookAt(lookTarget);      
+                }
+
+                else if (time >= 49.0 && time < 49.5) {
+                    const zoomDuration = 0.5; 
+                    const zoomProg = (time - 49.0) / zoomDuration;
+                    
+                    camera.position.lerpVectors(standPos, zoomPos, zoomProg);
+                    
+                    const currentLook = new THREE.Vector3().addVectors(camera.position, rotatedDir);
+                    camera.lookAt(currentLook);
+                }
+
+                // Memberi waktu otak memproses keberadaan Granny
+                else if (time >= 49.5 && time < 50) {
+                    camera.position.copy(zoomPos); 
+                    const currentLook = new THREE.Vector3().addVectors(camera.position, rotatedDir);
+                    camera.lookAt(currentLook);
+                }
+
+                // [4] KENA HIT / SHAKE (49.5 - 50.0)
+                // Granny memukul di detik ini
+                else if (time >= 50 && time < 50.5) {
+                    camera.position.copy(zoomPos); 
+
+                    const currentLook = new THREE.Vector3().addVectors(camera.position, rotatedDir);
+                    camera.lookAt(currentLook);
+                }
+
+                // [5] JATUH KE LANTAI (50.0 ke atas)
+                else {
+                    const fallStart = 50.5;
+                    const fallDuration = 0.7; // Jatuh cepat (gebrak lantai)
+                    let fallProg = (time - fallStart) / fallDuration;
+                    if (fallProg > 1.0) fallProg = 1.0;
+
+                    // 1. Posisi Turun (Dari Zoom -> Lantai)
+                    // Pakai easeInQuad biar makin cepat ke bawah
+                    const easeIn = fallProg * fallProg; 
+                    camera.position.lerpVectors(zoomPos, floorPos, easeIn);
+
+                    // 2. Pandangan Miring (Kepala terbentur lantai)
+                    const lookAtDoor = new THREE.Vector3().addVectors(zoomPos, rotatedDir);
+                    // Lihat ke samping kanan bawah (efek leher patah/miring)
+                    const lookAtFloor = new THREE.Vector3(-1.69, 4.31, 0.67); 
+                    
+                    const currentLook = new THREE.Vector3().lerpVectors(lookAtDoor, lookAtFloor, fallProg);
+                    camera.lookAt(currentLook);
+                }
+            }
+        }
+
+        // === CAM 13: ZOOM OUT (POSISI LANTAI/PASCA JATUH) ===
+        // === CAM 13: ZOOM OUT (OPTICAL/LENSA) ===
+        else if (time >= 53.0 && time < 63.0) {
+            camIdx = 13;
+            
+            // 1. Posisi Kamera TETAP (Diam di posisi awal jatuh)
+            // Kita tidak mengubah posisi (camera.position), hanya mengubah lensa.
+            camera.position.set(-0.78, -0.28, 2.13);
+            camera.lookAt(-5.77, 0.02, 2.13);
+
+            // 2. Hitung Progress
+            const duration = 7.0;
+            let progress = (time - 53.0) / duration;
+            if (progress > 1.0) progress = 1.0;
+            
+            const startZoom = 1.0;
+            const endZoom = 0.6; // Semakin kecil angkanya, semakin jauh (wide) terlihatnya
+            
+            camera.zoom = THREE.MathUtils.lerp(startZoom, endZoom, progress);
+            
+            // !!! PENTING: Wajib dipanggil setiap kali mengubah .zoom !!!
+            camera.updateProjectionMatrix(); 
+
+            // Visibilitas Granny
+            if (grannyPivot6) grannyPivot6.visible = true;
+            if (grannyPivot5) grannyPivot5.visible = false;
+        }
     }
+        
     if (heldKey) {
-        if (camIdx === 6 || camIdx === 8) {
+        if (camIdx === 6) {
             heldKey.visible = true;
-        } else {
+        } 
+        else if (camIdx === 8) {
+            if (time < 37.5) {
+                heldKey.visible = true;
+            } else {
+                heldKey.visible = false;
+            }
+        } 
+        else {
             heldKey.visible = false;
         }
     }

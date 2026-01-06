@@ -6,7 +6,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 
 // ================= GLOBAL VARIABLES =================
 let mixer = []
-let activeAction, grannyPivot, grannyPivot1, grannyPivot2, grannyPivot3;
+let activeAction, grannyPivot, grannyPivot1, grannyPivot2, grannyPivot3, grannyPivot4, grannyPivot5;
 let actions = {};
 const clock = new THREE.Clock();
 let isAttacking = false;
@@ -398,6 +398,50 @@ loader.load('/granny_animated.glb', (gltf) => {
         if (name.includes('walk')) { 
             localMixer.clipAction(clip).play();
         }
+    });
+});
+
+// 2.4. Load Granny (GAK NEMPEL DI CAM) JANGAN LUPA DIUBAH
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh4 = gltf.scene;
+    grannyPivot4 = new THREE.Group();
+    grannyPivot4.position.set(0.83, 0.59, -1.14); 
+    grannyPivot4.lookAt(5.49, 1.0, -3.25);
+    grannyMesh4.scale.set(0.7, 0.7, 0.7);
+    grannyMesh4.rotation.y = -Math.PI / 2;
+    grannyPivot4.add(grannyMesh4);
+    scene.add(grannyPivot4);
+    const localMixer = new THREE.AnimationMixer(grannyMesh4);
+    mixer.push(localMixer);
+    gltf.animations.forEach((clip) => {
+    const name = clip.name.toLowerCase();
+    const action = localMixer.clipAction(clip); 
+    if (name.includes('walk')) {
+        action.startAt(localMixer.time + 2.3);
+        action.play();
+    }
+    });
+});
+
+// 2.5. Load Granny (GAK NEMPEL DI CAM) JANGAN LUPA DIUBAH
+loader.load('/granny_animated.glb', (gltf) => {
+    const grannyMesh5 = gltf.scene;
+    grannyPivot5 = new THREE.Group();
+    grannyPivot5.position.set(-0.70, 0.58, 0.13); 
+    grannyPivot5.lookAt(-0.51, 0.50, -4.74);
+    grannyMesh5.scale.set(0.7, 0.7, 0.7);
+    grannyMesh5.rotation.y = -Math.PI / 2;
+    grannyPivot5.add(grannyMesh5);
+    scene.add(grannyPivot5);
+    const localMixer = new THREE.AnimationMixer(grannyMesh5);
+    mixer.push(localMixer);
+    gltf.animations.forEach((clip) => {
+    const name = clip.name.toLowerCase();
+    const action = localMixer.clipAction(clip); 
+    if (name.includes('walk')) {
+        action.startAt(localMixer.time + 2.3);
+        action.play();
+    }
     });
 });
 
