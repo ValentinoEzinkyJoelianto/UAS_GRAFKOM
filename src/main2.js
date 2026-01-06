@@ -1018,6 +1018,45 @@ function updateCameraCinematics(delta) {
     else if (time < 53.0) camIdx = 11; 
     else if (time < 63.0) camIdx = 12;
 
+    //light logic
+    if (camIdx === 1){
+        bulbLight1.castShadow = true;
+    }
+    if (camIdx === 4){
+        bulbLight1.castShadow = false;
+        bulbLight5.castShadow = true;
+        bulbLight8.castShadow = true;
+    }
+    if (camIdx === 5){
+        bulbLight8.castShadow = false;
+        bulbLight4.castShadow = true;
+    }
+    if (camIdx === 6){
+        bulbLight4.castShadow = false;
+        bulbLight10.castShadow = true;
+    }
+    if (camIdx === 7){
+        bulbLight10.castShadow = false;
+    }
+    if (camIdx === 9){
+        bulbLight8.castShadow = true;
+    }
+    if (camIdx === 11){
+        bulbLight8.castShadow = false;
+        bulbLight7.castShadow = true;
+    }
+    if (camIdx === 12){
+        bulbLight7.castShadow = false;
+        bulbLight5.intensity = 0;
+        bulbLight4.castShadow = true;
+    }
+    if (time > 63.5){
+        bulbLight5.intensity = 15;
+        bulbLight5.castShadow = true;
+        bulbLight1.castShadow = true;
+    }
+
+
     if (grannyPivot1) grannyPivot1.visible = false;
     if (grannyPivot2) grannyPivot2.visible = false;
     if (grannyPivot3) grannyPivot3.visible = false;
@@ -1473,7 +1512,7 @@ function animate() {
     const x = camera.position.x.toFixed(2);
     const y = camera.position.y.toFixed(2);
     const z = camera.position.z.toFixed(2);
-    infoDiv.innerText = `KOORDINAT PLAYER - X: ${x} | Y: ${y} | Z: ${z}`;
+    //infoDiv.innerText = `KOORDINAT PLAYER - X: ${x} | Y: ${y} | Z: ${z}`;
 
     if (grannyPivot) {
         const distance = grannyPivot.position.distanceTo(camera.position);
