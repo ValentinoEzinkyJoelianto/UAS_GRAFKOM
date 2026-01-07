@@ -101,7 +101,7 @@ blockerMaterial.depthWrite = false;
 // ---------------------------------------------------------
 const bulbLight1 = new THREE.PointLight(0xFFFFFF, 10, 5); 
 bulbLight1.position.set(-1.8, 0.4, -1.6); 
-bulbLight1.castShadow = false; 
+bulbLight1.castShadow = true; 
 bulbLight1.shadow.mapSize.set(1024, 1024);
 bulbLight1.shadow.camera.near = 0.1;
 bulbLight1.shadow.bias = -0.0005;
@@ -170,7 +170,7 @@ scene.add(blocker4);
 // Tanpa blocker sesuai permintaan
 const bulbLight5 = new THREE.PointLight(0xFFFFFF, 15, 5); 
 bulbLight5.position.set(-0.15, 1.8, 1.4); 
-bulbLight5.castShadow = false; 
+bulbLight5.castShadow = true; 
 bulbLight5.shadow.mapSize.set(1024, 1024); 
 bulbLight5.shadow.camera.near = 0.1;
 bulbLight5.shadow.bias = -0.0005;
